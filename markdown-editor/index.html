@@ -317,6 +317,32 @@
             overflow: visible;
         }
 
+        /* The preview's line-height: 1.75 is inherited by .katex and inflates
+           the strut, breaking vertical alignment of sup/sub. Re-assert
+           KaTeX's 1.2 line-height inside math blocks. */
+        .preview .katex {
+            line-height: 1.2;
+        }
+
+        /* KaTeX 0.16 ships style classes like .reset-textstyle.scriptstyle for
+           superscript/subscript content, but the bundled katex.min.css omits
+           the matching rules — without them, the sup/sub text inherits the
+           full math font-size and visually overlaps the base character,
+           making x^2 render as x₂. Force the canonical sizes; fixKatexScripts
+           handles the vertical alignment. */
+        .preview .katex .reset-textstyle.scriptstyle {
+            font-size: 0.7em;
+            line-height: 1;
+        }
+        .preview .katex .reset-textstyle.scriptscriptstyle {
+            font-size: 0.5em;
+            line-height: 1;
+        }
+        .preview .katex .vlist > span > span,
+        .preview .katex .fontsize-ensurer {
+            line-height: 1;
+        }
+
         /* Toast */
         .toast {
             position: fixed;
@@ -502,12 +528,69 @@
             }
         }
 
+        // KaTeX 0.16's minified stylesheet drops the .reset-textstyle.scriptstyle
+        // rule, so script-level content inherits the full math size. Combined
+        // with .fontsize-ensurer's baseline alignment, that pushes sup/sub
+        // text right on top of the base character. After render, rewrite the
+        // wrap's top offset so that the script block sits where LaTeX readers
+        // expect: sup.bottom aligns to the base baseline, sub.top aligns to it.
+        function fixKatexScripts(root) {
+            root.querySelectorAll('.vlist > span').forEach(wrap => {
+                if (!wrap.style.top) return;
+                const ensurer = wrap.querySelector(':scope > .fontsize-ensurer');
+                if (ensurer) {
+                    ensurer.style.height = '0px';
+                    ensurer.style.lineHeight = '0';
+                    ensurer.style.fontSize = '0';
+                    ensurer.style.margin = '0';
+                    ensurer.style.padding = '0';
+                }
+                // Find the script block and measure its rendered height.
+                const script = Array.from(wrap.children).find(c =>
+                    !c.classList.contains('fontsize-ensurer') &&
+                    !c.classList.contains('baseline-fix')
+                );
+                if (!script) return;
+                script.style.display = 'inline-block';
+                script.style.verticalAlign = 'top';
+                script.style.lineHeight = '1';
+                // The vlist table-cell sits flush at the base character's
+                // baseline. We want the wrap's effective top to equal:
+                //   sup: (baseline - scriptHeight)  relative to vlist top
+                //   sub: 0  (i.e. baseline = top of wrap)
+                // The wrap's existing top: X em is half right; just shift it
+                // by the script block's own height so its top edge lands at
+                // the baseline for sub, or one scriptHeight above for sup.
+                const fontSize = parseFloat(getComputedStyle(wrap.parentElement).fontSize);
+                const scriptH = script.getBoundingClientRect().height;
+                const scriptEm = scriptH / fontSize;
+                const oldTop = parseFloat(wrap.style.top);
+                // For sup: wrap.top + scriptEm should land at 0
+                //   => wrap.top = -scriptEm
+                // For sub: wrap.top + 0 should be the script top → scriptH above baseline
+                //   => wrap.top stays as-is, but we want the wrap to actually
+                //   start at vlist top (= 0), which it does via the cell
+                //   alignment. Then the script sits at the wrap top with
+                //   vertical-align: top, which would put it ABOVE the
+                //   baseline, not below. Sub needs its baseline at the wrap
+                //   top, so shift by -scriptEm to compensate.
+                let newTop;
+                if (oldTop < 0) {
+                    newTop = -scriptEm;
+                } else {
+                    newTop = 0;
+                }
+                wrap.style.top = newTop + 'em';
+            });
+        }
+
         function render() {
             const src = editor.value;
             // Highlight overlay — keep last char as a trailing space so it scrolls correctly
             editorHl.innerHTML = highlightSource(src);
             preview.innerHTML = md.render(src);
             expandKatexBlocks(preview);
+            fixKatexScripts(preview);
         }
 
         // Sync overlay scroll with textarea scroll
@@ -697,6 +780,7 @@ function hello(name) {
             const tmp = document.createElement('div');
             tmp.innerHTML = html;
             expandKatexBlocks(tmp);
+            fixKatexScripts(tmp);
             const htmlExpanded = tmp.innerHTML;
             const firstLine = (mdSrc.split('\n').find(l => l.trim().startsWith('#')) || '').replace(/^#+\s*/, '').trim();
             const title = firstLine || 'Markdown 笔记';
@@ -801,6 +885,7 @@ function hello(name) {
                 .md-body .katex { color: ${c.text}; }
                 .md-body .katex-display { margin: 1em 0; overflow: visible; }
                 .md-body .katex-display .katex-html { overflow: visible; }
+                .md-body .katex { line-height: 1.2; }
             `;
             const style = document.createElement('style');
             style.textContent = css;
