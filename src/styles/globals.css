@@ -1,0 +1,73 @@
+/* Global overrides for React-mounted subsite */
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#userButtonContainer {
+  display: inline-flex !important;
+  align-items: center;
+}
+
+/* Make sure LiquidGlass canvas sits behind content */
+#liquid-glass-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 6;
+  pointer-events: none;
+}
+
+#root > *:not(.top-bar) {
+  position: relative;
+  z-index: 7;
+}
+
+/* Morph card & backdrop belong to document body, not #root */
+.backdrop,
+.morph-card {
+  position: fixed;
+}
+
+.backdrop {
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 250;
+}
+
+.backdrop.active {
+  opacity: 1;
+}
+
+.morph-card {
+  z-index: 300;
+}
+
+/* Glass fallback styles (no WebGL) */
+body.no-lg-refraction .card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(8px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(150%) !important;
+}
+
+body.no-lg-refraction .top-bar {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(10px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(150%) !important;
+}
+
+/* low 档（用户 UI 设置里的「低」画质）：完全不用 WebGL */
+body.liquid-glass-low #liquid-glass-canvas {
+  display: none;
+}
+
+body.liquid-glass-low .card,
+body.liquid-glass-low .top-bar,
+body.liquid-glass-low .morph-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(8px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(150%) !important;
+}

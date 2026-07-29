@@ -1,0 +1,13 @@
+{
+  "tools": [
+    {
+      "id": "markdown-editor",
+      "name": "Markdown 编辑器",
+      "description": "支持 LaTeX 公式的 Markdown 编辑器，可导出为图片，支持自定义配色",
+      "tags": ["编辑器", "Markdown", "LaTeX"],
+      "icon": "📝",
+      "featured": true,
+      "demoFile": "markdown-editor/index.html"
+    }
+  ]
+}
