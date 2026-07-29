@@ -310,7 +310,11 @@
         }
         .preview .katex-display {
             margin: 1em 0;
-            overflow-x: auto;
+            overflow: visible;
+        }
+
+        .preview .katex-display .katex-html {
+            overflow: visible;
         }
 
         /* Toast */
@@ -484,11 +488,26 @@
             }
         }
 
+        // KaTeX wraps block formulas in <span class="katex-display"> and uses
+        // inline-block struts that let the actual content overflow the box.
+        // The container's intrinsic height only reflects the strut, not the
+        // rendered math, so subsequent content overlaps the bottom rows.
+        // Walk every .katex-display after render and grow it to fit.
+        function expandKatexBlocks(root) {
+            const displays = root.querySelectorAll('.katex-display');
+            for (const el of displays) {
+                el.style.height = 'auto';
+                const need = el.scrollHeight;
+                if (need > el.clientHeight) el.style.height = need + 'px';
+            }
+        }
+
         function render() {
             const src = editor.value;
             // Highlight overlay — keep last char as a trailing space so it scrolls correctly
             editorHl.innerHTML = highlightSource(src);
             preview.innerHTML = md.render(src);
+            expandKatexBlocks(preview);
         }
 
         // Sync overlay scroll with textarea scroll
@@ -674,6 +693,11 @@ function hello(name) {
             const accent = currentColors.accent;
 
             const html = md.render(mdSrc);
+            // Expand KaTeX block formulas inside the rendered HTML
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            expandKatexBlocks(tmp);
+            const htmlExpanded = tmp.innerHTML;
             const firstLine = (mdSrc.split('\n').find(l => l.trim().startsWith('#')) || '').replace(/^#+\s*/, '').trim();
             const title = firstLine || 'Markdown 笔记';
             const date = fmtNow();
@@ -690,7 +714,7 @@ function hello(name) {
                 '<h1 style="font-size:26px;font-weight:700;margin:0 0 10px;line-height:1.35;color:' + text + '">' + esc(title) + '</h1>' +
                 '<div style="font-size:12px;color:' + muted + ';margin-bottom:20px">' + date + '</div>' +
                 '<div style="width:40px;height:3px;background:' + accent + ';border-radius:2px;margin-bottom:24px"></div>' +
-                '<div class="md-body" style="font-size:15px;line-height:1.9;color:' + text + '">' + html + '</div>' +
+                '<div class="md-body" style="font-size:15px;line-height:1.9;color:' + text + '">' + htmlExpanded + '</div>' +
                 '<div style="margin-top:32px;padding-top:16px;border-top:1px solid ' + muted + '33">' +
                 '<span style="font-size:11px;color:' + muted + '">来自 tools.oscarstudio.cn</span>' +
                 '</div></div></div>';
@@ -775,7 +799,8 @@ function hello(name) {
                 .md-body hr { border: none; border-top: 1px solid ${c.muted}33; margin: 2em 0; }
                 .md-body img { max-width: 100%; border-radius: 6px; }
                 .md-body .katex { color: ${c.text}; }
-                .md-body .katex-display { margin: 1em 0; overflow-x: auto; }
+                .md-body .katex-display { margin: 1em 0; overflow: visible; }
+                .md-body .katex-display .katex-html { overflow: visible; }
             `;
             const style = document.createElement('style');
             style.textContent = css;
