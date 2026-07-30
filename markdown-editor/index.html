@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown 编辑器 - Oscar Studio</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <link rel="stylesheet" href="https://ai.oscarstudio.cn/opilot.css">
+    <style>
+        :root {
+            --ac: #6BAED6;
+            --ac-d: #4A8FBC;
+            --bg: #0f1724;
+            --bg2: #172032;
+            --t1: #dce4ed;
+            --t2: #8a9cb5;
+            --t3: #5a6c80;
+            --bd: rgba(255, 255, 255, .08);
+            --sf: rgba(255, 255, 255, .04);
+            --sf2: rgba(255, 255, 255, .06);
+            --f: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+            --f-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--f);
+            background: var(--bg);
+            color: var(--t1);
+            min-height: 100vh;
+        }
+
+        #userButtonContainer {
+            display: inline-flex !important;
+            align-items: center;
+        }
+
+        .top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 18px;
+            background: var(--sf);
+            backdrop-filter: blur(10px) saturate(150%);
+            -webkit-backdrop-filter: blur(10px) saturate(150%);
+            border-bottom: 1px solid var(--bd);
+        }
+
+        .top-bar .breadcrumb {
+            font-size: 13px;
+            color: var(--t2);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .top-bar .breadcrumb img {
+            height: 22px;
+            vertical-align: middle;
+        }
+
+        .top-bar .breadcrumb a {
+            color: var(--t1);
+            text-decoration: none;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 10px 18px;
+            background: var(--sf);
+            border-bottom: 1px solid var(--bd);
+        }
+
+        .toolbar select,
+        .toolbar button,
+        .toolbar input[type=color] {
+            font-family: var(--f);
+            font-size: 12px;
+            color: var(--t1);
+            background: var(--sf2);
+            border: 1px solid var(--bd);
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            outline: none;
+            transition: background .15s, border-color .15s;
+        }
+
+        .toolbar input[type=color] {
+            padding: 2px;
+            width: 32px;
+            height: 28px;
+        }
+
+        .toolbar button:hover,
+        .toolbar select:hover {
+            background: rgba(107, 174, 214, .15);
+            border-color: var(--ac);
+        }
+
+        .toolbar button.primary {
+            background: var(--ac);
+            color: #fff;
+            border-color: var(--ac);
+            font-weight: 600;
+        }
+
+        .toolbar button.primary:hover {
+            background: var(--ac-d);
+        }
+
+        .toolbar label {
+            font-size: 11px;
+            color: var(--t3);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toolbar .sep {
+            width: 1px;
+            height: 20px;
+            background: var(--bd);
+        }
+
+        .toolbar .status {
+            margin-left: auto;
+            font-size: 11px;
+            color: var(--t3);
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            align-items: start;
+        }
+
+        @media (max-width: 800px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .editor-pane {
+            border-right: 1px solid var(--bd);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 96px);
+            position: sticky;
+            top: 96px;
+            align-self: start;
+        }
+
+        .editor-pane .pane-hd {
+            padding: 8px 14px;
+            font-size: 11px;
+            color: var(--t3);
+            border-bottom: 1px solid var(--bd);
+            background: var(--sf);
+        }
+
+        .editor-wrap {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .editor-hl,
+        .editor {
+            position: absolute;
+            inset: 0;
+            margin: 0;
+            padding: 18px;
+            font-family: var(--f-mono);
+            font-size: 13.5px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow: auto;
+            background: transparent;
+            border: 0;
+            box-sizing: border-box;
+            tab-size: 4;
+        }
+
+        .editor-hl {
+            pointer-events: none;
+            color: transparent;
+            z-index: 1;
+        }
+
+        .editor-hl > code {
+            font-family: inherit;
+            font-size: inherit;
+            background: transparent;
+            padding: 0;
+            color: var(--t1);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: block;
+            text-shadow: none;
+        }
+
+        .editor {
+            color: transparent;
+            caret-color: var(--t1);
+            resize: none;
+            outline: none;
+            z-index: 2;
+        }
+
+        /* VS Code Dark+ inspired tokens */
+        .editor-hl .token.heading,
+        .editor-hl .token.title { color: #569cd6; font-weight: 700; }
+        .editor-hl .token.bold { color: #569cd6; font-weight: 700; }
+        .editor-hl .token.italic { color: #c586c0; font-style: italic; }
+        .editor-hl .token.strikethrough,
+        .editor-hl .token.deleted { color: #d4d4d4; text-decoration: line-through; }
+        .editor-hl .token.list,
+        .editor-hl .token.punctuation { color: #d4d4d4; }
+        .editor-hl .token.url,
+        .editor-hl .token.link { color: #ce9178; }
+        .editor-hl .token.url-link { color: #9cdcfe; }
+        .editor-hl .token.code,
+        .editor-hl .token.code-block { color: #ce9178; }
+        .editor-hl .token.quote,
+        .editor-hl .token.blockquote { color: #6a9955; }
+        .editor-hl .token.hr { color: #d4d4d4; }
+        .editor-hl .token.table { color: #d4d4d4; }
+        .editor-hl .token.table-pipe { color: #808080; }
+        .editor-hl .token.emoji { color: #d7ba7d; }
+
+        .preview-pane {
+            padding: 24px 32px 80px;
+        }
+
+        .preview {
+            max-width: 760px;
+            margin: 0 auto;
+            line-height: 1.75;
+            color: var(--t1);
+        }
+
+        .preview h1, .preview h2, .preview h3,
+        .preview h4, .preview h5, .preview h6 {
+            margin: 1.4em 0 .6em;
+            line-height: 1.3;
+            font-weight: 700;
+        }
+
+        .preview h1 { font-size: 1.9em; border-bottom: 1px solid var(--bd); padding-bottom: .3em; }
+        .preview h2 { font-size: 1.5em; }
+        .preview h3 { font-size: 1.25em; }
+        .preview h4 { font-size: 1.1em; }
+        .preview p { margin: .7em 0; }
+        .preview a { color: var(--ac); text-decoration: none; border-bottom: 1px dashed var(--ac); }
+        .preview ul, .preview ol { padding-left: 1.6em; }
+        .preview li { margin: .3em 0; }
+        .preview blockquote {
+            margin: 1em 0;
+            padding: .4em 1em;
+            border-left: 4px solid var(--ac);
+            background: var(--sf);
+            color: var(--t2);
+            border-radius: 0 6px 6px 0;
+        }
+        .preview code {
+            font-family: var(--f-mono);
+            font-size: .9em;
+            background: var(--sf2);
+            padding: .12em .4em;
+            border-radius: 4px;
+        }
+        .preview pre {
+            background: var(--bg2);
+            padding: 14px 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--bd);
+        }
+        .preview pre code { background: transparent; padding: 0; font-size: .85em; }
+        .preview table {
+            border-collapse: collapse;
+            margin: 1em 0;
+            width: 100%;
+        }
+        .preview th, .preview td {
+            border: 1px solid var(--bd);
+            padding: 6px 12px;
+            text-align: left;
+        }
+        .preview th { background: var(--sf2); font-weight: 600; }
+        .preview hr {
+            border: none;
+            border-top: 1px solid var(--bd);
+            margin: 2em 0;
+        }
+        .preview img {
+            max-width: 100%;
+            border-radius: 6px;
+        }
+        .preview .katex-display {
+            margin: 1em 0;
+            overflow: visible;
+        }
+
+        .preview .katex-display .katex-html {
+            overflow: visible;
+        }
+
+        /* The preview's line-height: 1.75 is inherited by .katex and inflates
+           the strut, breaking vertical alignment of sup/sub. Re-assert
+           KaTeX's 1.2 line-height inside math blocks. */
+        .preview .katex {
+            line-height: 1.2;
+        }
+
+        /* KaTeX 0.16 ships style classes like .reset-textstyle.scriptstyle for
+           superscript/subscript content, but the bundled katex.min.css omits
+           the matching rules. Although KaTeX 0.16 actually emits the newer
+           .sizing.reset-size6.size3 / .reset-size5.size2 tokens that do have
+           rules, some of the inline-block / baseline-alignment glue can still
+           look off if the preview's line-height: 1.75 inherits into KaTeX's
+           internal spans. Reset line-height on the math subtree so KaTeX's
+           own 1.2 line-height takes effect. */
+        .preview .katex,
+        .preview .katex .katex-html,
+        .preview .katex .base {
+            line-height: 1.2;
+        }
+
+        /* KaTeX's CSS for the square-root glyph is also missing: the .sqrt-sign
+           wrapper has inline `top: …em` but no `position: relative`, so the
+           top offset is ignored and only the bottom-left tick renders
+           (looks like a backslash). Re-assert position so the overline lands. */
+        .preview .katex .sqrt-sign {
+            position: relative;
+        }
+        .preview .katex .style-wrap {
+            position: relative;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0, 0, 0, .85);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s, transform .25s;
+            z-index: 9999;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Export canvas holder (off-screen) */
+        #exportHolder {
+            position: fixed;
+            left: -99999px;
+            top: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="top-bar">
+        <div class="breadcrumb">
+            <img src="/logo.png" alt="">
+            <a href="https://oscarstudio.cn">Oscar Studio</a>
+            <span>›</span>
+            <a href="/">实用工具</a>
+            <span>›</span>
+            <span>Markdown 编辑器</span>
+        </div>
+        <div style="flex:1"></div>
+        <div id="userButtonContainer"></div>
+    </header>
+
+    <div class="toolbar">
+        <label>主题
+            <select id="themeSel">
+                <option value="light">白色简约</option>
+                <option value="dark">深邃夜</option>
+                <option value="warm">暖阳橘</option>
+                <option value="sky">天空蓝</option>
+                <option value="custom">自定义</option>
+            </select>
+        </label>
+        <span class="sep"></span>
+        <label>背景 <input type="color" id="cBg" value="#f8f9fa"></label>
+        <label>卡片 <input type="color" id="cCard" value="#ffffff"></label>
+        <label>文字 <input type="color" id="cText" value="#1d1d1f"></label>
+        <label>次要 <input type="color" id="cMuted" value="#868e96"></label>
+        <label>强调 <input type="color" id="cAccent" value="#6BAED6"></label>
+        <span class="sep"></span>
+        <button id="btnCopy">复制 Markdown</button>
+        <button id="btnClear">清空</button>
+        <button id="btnExport" class="primary">↓ 导出图片</button>
+        <span class="status" id="status">就绪</span>
+    </div>
+
+    <div class="workspace">
+        <div class="editor-pane">
+            <div class="pane-hd">编辑器</div>
+            <div class="editor-wrap">
+                <pre class="editor-hl language-markdown" aria-hidden="true"><code class="language-markdown" id="editorHl"></code></pre>
+                <textarea class="editor" id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="开始书写 Markdown… 支持 **加粗** *斜体* [链接]() ```代码块``` $LaTeX$ 与 $$LaTeX$$ 块级公式"></textarea>
+            </div>
+        </div>
+        <div class="preview-pane">
+            <div class="preview" id="preview"></div>
+        </div>
+    </div>
+
+    <div id="exportHolder"></div>
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markdown.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://api.oscarstudio.cn/user-button.js" crossorigin="anonymous" async></script>
+    <script src="https://ai.oscarstudio.cn/opilot.js" async></script>
+
+    <script type="module">
+        'use strict';
+
+        const STORAGE_KEY = 'md-editor-draft-v1';
+
+        const THEMES = {
+            light: { name: '白色简约', bg: '#f8f9fa', card: '#ffffff', text: '#1d1d1f', muted: '#868e96', accent: '#6BAED6' },
+            dark:  { name: '深邃夜',   bg: '#0f1724', card: '#0f1724', text: '#dce4ed', muted: '#8a9cb5', accent: '#6BAED6' },
+            warm:  { name: '暖阳橘',   bg: '#ffecd2', card: '#fff5e6', text: '#3d2c1e', muted: '#8b7355', accent: '#d97a3c' },
+            sky:   { name: '天空蓝',   bg: 'linear-gradient(135deg,#4A8FBC,#7CB8D8)', card: '#ffffff', text: '#0d2a3f', muted: '#4a6a85', accent: '#4A8FBC' }
+        };
+
+        // Effective theme colors used by export — these reflect the *current* state
+        let currentColors = { ...THEMES.light };
+
+        // markdown-it-katex pulls in katex@^0.6.0, which renders \sqrt as a
+        // bare character (no SVG vinculum above it). Skip the plugin and call
+        // our page-global katex 0.16 directly: extract math first, run
+        // markdown-it on the placeholder-patched source, then splice the
+        // rendered math back in.
+        const md = window.markdownit({
+            html: false,
+            linkify: true,
+            typographer: true,
+            breaks: false
+        });
+
+        // Render `$...$` and `$$...$$` with the global KaTeX 0.16. Returns
+        // { src, blocks } where src has placeholders substituted in and
+        // blocks contains the rendered HTML.
+        function extractAndRenderMath(src) {
+            const blocks = [];
+            // Block math first (multiline $$...$$)
+            src = src.replace(/\$\$([\s\S]+?)\$\$/g, (m, content) => {
+                const ph = `\u0001MATH_B${blocks.length}\u0001`;
+                blocks.push(renderMath(content.trim(), true));
+                return ph;
+            });
+            // Inline math ($...$, but not $$)
+            src = src.replace(/(^|[^$])\$(?!\$)([^\n$]+?)(?<!\$)\$(?!\$)/g, (m, lead, content) => {
+                const ph = `\u0001MATH_I${blocks.length}\u0001`;
+                blocks.push(renderMath(content, false));
+                return lead + ph;
+            });
+            return { src, blocks };
+        }
+
+        function renderMath(latex, displayMode) {
+            if (!window.katex) return `<code>${displayMode ? '$$' : '$'}${latex}${displayMode ? '$$' : '$'}</code>`;
+            try {
+                return window.katex.renderToString(latex, {
+                    displayMode,
+                    throwOnError: false,
+                    output: 'html',
+                    strict: 'ignore',
+                    trust: false
+                });
+            } catch (e) {
+                console.warn('KaTeX error:', e);
+                return `<code class="katex-error">${latex}</code>`;
+            }
+        }
+
+        function spliceMathBlocks(html, blocks) {
+            return html.replace(/\u0001MATH_([BI])(\d+)\u0001/g, (m, kind, idx) => {
+                return blocks[parseInt(idx, 10)] || m;
+            });
+        }
+
+        const $ = (id) => document.getElementById(id);
+        const editor = $('editor');
+        const editorHl = $('editorHl');
+        const preview = $('preview');
+        const themeSel = $('themeSel');
+        const statusEl = $('status');
+
+        const colorInputs = {
+            bg: $('cBg'), card: $('cCard'), text: $('cText'),
+            muted: $('cMuted'), accent: $('cAccent')
+        };
+
+        // ===== Theme handling =====
+        function applyTheme(key) {
+            const t = THEMES[key];
+            if (!t) return;
+            currentColors = { ...t };
+            // For preset themes, only sync color pickers that are simple hex
+            // (gradient backgrounds can't be represented in a color input).
+            if (t.bg.startsWith('#')) colorInputs.bg.value = t.bg;
+            if (t.card.startsWith('#')) colorInputs.card.value = t.card;
+            colorInputs.text.value = t.text;
+            colorInputs.muted.value = t.muted;
+            colorInputs.accent.value = t.accent;
+        }
+
+        themeSel.addEventListener('change', () => {
+            if (themeSel.value !== 'custom') applyTheme(themeSel.value);
+        });
+
+        Object.entries(colorInputs).forEach(([k, el]) => {
+            el.addEventListener('input', () => {
+                themeSel.value = 'custom';
+                currentColors[k] = el.value;
+            });
+        });
+
+        // ===== Markdown render =====
+        function highlightSource(src) {
+            // Append a trailing newline so Prism's markdown grammar (which is line-based)
+            // correctly highlights the last line and trailing fences.
+            const padded = src.endsWith('\n') ? src + ' ' : src + '\n ';
+            try {
+                return Prism.highlight(padded, Prism.languages.markdown, 'markdown');
+            } catch (e) {
+                const esc = (s) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+                return esc(padded);
+            }
+        }
+
+        // KaTeX wraps block formulas in <span class="katex-display"> and uses
+        // inline-block struts that let the actual content overflow the box.
+        // The container's intrinsic height only reflects the strut, not the
+        // rendered math, so subsequent content overlaps the bottom rows.
+        // Walk every .katex-display after render and grow it to fit. We also
+        // add padding-top to absorb the upward overflow from KaTeX's
+        // absolutely positioned vinculum (e.g. \sqrt's overline), which
+        // otherwise renders outside the box and gets clipped by html2canvas.
+        function expandKatexBlocks(root) {
+            const displays = root.querySelectorAll('.katex-display');
+            for (const el of displays) {
+                el.style.height = 'auto';
+                el.style.paddingTop = '';
+                el.style.marginTop = '';
+                const need = el.scrollHeight;
+                if (need > el.clientHeight) el.style.height = need + 'px';
+                // Sweep every descendant, find the highest offset/positioned child
+                // whose top extends above the container, and add that much
+                // padding-top (offset by a matching margin-top on the .katex
+                // subtree so the rendered math stays put).
+                const elBox = el.getBoundingClientRect();
+                const katex = el.querySelector('.katex');
+                if (!katex) continue;
+                let overflowAbove = 0;
+                let largestOverflowEl = null;
+                // Look at every SVG and .hide-tail descendant of the .katex
+                // subtree, plus any rendered (offsetWidth > 0) descendant.
+                // KaTeX uses inline `top: -N em` plus inline-block baseline
+                // alignment on .hide-tail children to position the vinculum
+                // above the box — its actual rendered top may differ from the
+                // expected -N*em due to nested line-height / font-size.
+                const probe = (root) => {
+                    const probeBox = root.querySelector('.katex-display').getBoundingClientRect();
+                    const probeKatex = root.querySelector('.katex-display .katex');
+                    const seen = new Set();
+                    root.querySelectorAll('.katex-display svg, .katex-display .hide-tail').forEach(node => {
+                        const r = node.getBoundingClientRect();
+                        if (r.height > 0 && r.top < probeBox.top) {
+                            const diff = probeBox.top - r.top;
+                            if (diff > overflowAbove) {
+                                overflowAbove = diff;
+                                largestOverflowEl = { tag: node.tagName, cls: (node.className||'').toString().substring(0, 30), top: r.top, h: r.height, w: node.offsetWidth };
+                            }
+                        }
+                        seen.add(node);
+                    });
+                    // Also sweep the .katex subtree for any other rendered
+                    // child above the box (in case the .hide-tail itself
+                    // stays inside but its SVG path renders above).
+                    root.querySelectorAll('.katex-display .katex *').forEach(node => {
+                        if (seen.has(node)) return;
+                        let isRenderable = node.offsetWidth > 0;
+                        if (!isRenderable && node.tagName.toLowerCase() === 'svg') {
+                            const r = node.getBoundingClientRect();
+                            isRenderable = r.width > 0 && r.height > 0;
+                        }
+                        if (!isRenderable) return;
+                        const r = node.getBoundingClientRect();
+                        if (r.height > 0 && r.top < probeBox.top) {
+                            const diff = probeBox.top - r.top;
+                            if (diff > overflowAbove) {
+                                overflowAbove = diff;
+                                largestOverflowEl = { tag: node.tagName, cls: (node.className||'').toString().substring(0, 30), top: r.top, h: r.height, w: node.offsetWidth };
+                            }
+                        }
+                    });
+                };
+                // In detached roots, getBoundingClientRect returns zeros. Attach
+                // a temporary clone into the document so we can read positions.
+                if (elBox.width === 0 && elBox.height === 0 && root.parentElement !== document.body) {
+                    const clone = root.cloneNode(true);
+                    clone.style.position = 'absolute';
+                    clone.style.left = '-99999px';
+                    clone.style.top = '0';
+                    clone.style.width = '760px';
+                    document.body.appendChild(clone);
+                    probe(clone);
+                    clone.remove();
+                } else {
+                    probe(root);
+                }
+                if (overflowAbove > 0) {
+                    el.style.paddingTop = overflowAbove + 'px';
+                    katex.style.marginTop = overflowAbove + 'px';
+                }
+            }
+        }
+
+// (KaTeX 0.16's native layout produces correct sup/sub positions as long
+// as its bundled sizing rules are present, so no JS post-processing is
+// needed. Previously we tried to rewrite wrap.top offsets to compensate
+// for the missing .reset-textstyle.scriptstyle rule, but that broke
+// sup/sub baseline alignment instead.)
+
+        function render() {
+            const src = editor.value;
+            // Highlight overlay — keep last char as a trailing space so it scrolls correctly
+            editorHl.innerHTML = highlightSource(src);
+            const { src: srcWithPlaceholders, blocks } = extractAndRenderMath(src);
+            const rendered = spliceMathBlocks(md.render(srcWithPlaceholders), blocks);
+            preview.innerHTML = rendered;
+            expandKatexBlocks(preview);
+        }
+
+        // Sync overlay scroll with textarea scroll
+        editor.addEventListener('scroll', () => {
+            editorHl.parentElement.scrollTop = editor.scrollTop;
+            editorHl.parentElement.scrollLeft = editor.scrollLeft;
+        });
+
+        // ===== Auto-save draft =====
+        let saveTimer = null;
+        function scheduleSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                try {
+                    localStorage.setItem(STORAGE_KEY, editor.value);
+                    const ts = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+                    statusEl.textContent = '已自动保存 · ' + ts;
+                } catch (e) { /* ignore quota */ }
+            }, 400);
+        }
+
+        editor.addEventListener('input', () => {
+            render();
+            scheduleSave();
+        });
+
+        // Tab key inserts 4 spaces; Shift+Tab dedents; Ctrl/Cmd+B/I/K wrap selection
+        editor.addEventListener('keydown', (e) => {
+            const ta = editor;
+            const start = ta.selectionStart, end = ta.selectionEnd;
+            const TAB = '    ';
+
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const before = ta.value.slice(0, start);
+                const sel = ta.value.slice(start, end);
+                const after = ta.value.slice(end);
+
+                if (e.shiftKey) {
+                    // Dedent: remove up to TAB.length leading spaces from each selected line
+                    const dedented = sel.replace(/^( {1,4})/gm, '');
+                    const delta = sel.length - dedented.length;
+                    ta.value = before + dedented + after;
+                    ta.selectionStart = start;
+                    ta.selectionEnd = end - delta;
+                } else if (start === end) {
+                    // Insert TAB at caret
+                    ta.value = before + TAB + after;
+                    ta.selectionStart = ta.selectionEnd = start + TAB.length;
+                } else {
+                    // Indent each line in selection
+                    const indented = sel.replace(/^/gm, TAB);
+                    ta.value = before + indented + after;
+                    ta.selectionStart = start;
+                    ta.selectionEnd = end + (indented.length - sel.length);
+                }
+                render();
+                scheduleSave();
+                return;
+            }
+
+            const meta = e.metaKey || e.ctrlKey;
+            if (meta && (e.key === 'b' || e.key === 'B')) {
+                e.preventDefault();
+                wrapSelection(ta, '**', '**');
+                render(); scheduleSave();
+            } else if (meta && (e.key === 'i' || e.key === 'I')) {
+                e.preventDefault();
+                wrapSelection(ta, '*', '*');
+                render(); scheduleSave();
+            } else if (meta && (e.key === 'k' || e.key === 'K')) {
+                e.preventDefault();
+                wrapSelection(ta, '[', ']()');
+                render(); scheduleSave();
+            }
+        });
+
+        function wrapSelection(ta, left, right) {
+            const start = ta.selectionStart, end = ta.selectionEnd;
+            const sel = ta.value.slice(start, end);
+            const before = ta.value.slice(0, start);
+            const after = ta.value.slice(end);
+            ta.value = before + left + sel + right + after;
+            const cursorOffset = left.length;
+            ta.selectionStart = start + cursorOffset;
+            ta.selectionEnd = end + cursorOffset;
+        }
+
+        // ===== Default content on first visit =====
+        const defaultMd = `# 欢迎使用 Markdown 编辑器
+
+支持所有基础 Markdown 语法，以及 LaTeX 公式（KaTeX 渲染）。
+
+## 功能速览
+
+- **粗体**、*斜体*、~~删除线~~、\`行内代码\`
+- [链接](https://oscarstudio.cn) 与 ![图片描述](https://placehold.co/600x300?text=Hello)
+- 列表、引用、表格、水平线
+- LaTeX 行内公式：$E = mc^2$
+- LaTeX 块级公式：
+
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2} \\, dx = \\sqrt{\\pi}
+$$
+
+## 代码块
+
+\`\`\`javascript
+function hello(name) {
+  return \`Hello, \${name}!\`;
+}
+\`\`\`
+
+## 引用
+
+> 学而时习之，不亦说乎？
+
+| 列 A | 列 B | 列 C |
+| :--- | :--- | :--- |
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+
+---
+
+完成后点击右上角 **导出图片**，可一键保存为 PNG，并支持自定义配色。
+`;
+
+        function loadDraft() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved !== null && saved.length > 0) {
+                    editor.value = saved;
+                } else {
+                    editor.value = defaultMd;
+                }
+            } catch (e) {
+                editor.value = defaultMd;
+            }
+        }
+
+        // ===== Toolbar actions =====
+        $('btnCopy').addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(editor.value);
+                toast('已复制 Markdown 源码');
+            } catch (e) {
+                toast('复制失败：浏览器不支持');
+            }
+        });
+
+        $('btnClear').addEventListener('click', () => {
+            if (!editor.value || confirm('确认清空当前内容？')) {
+                editor.value = '';
+                render();
+                scheduleSave();
+            }
+        });
+
+        // ===== Export to image =====
+        $('btnExport').addEventListener('click', () => {
+            const src = editor.value.trim();
+            if (!src) { toast('没有内容可导出'); return; }
+            exportImage(src);
+        });
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function fmtNow() {
+            const d = new Date();
+            return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' +
+                String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        }
+
+        function exportImage(mdSrc) {
+            const bg = currentColors.bg;
+            const card = currentColors.card;
+            const text = currentColors.text;
+            const muted = currentColors.muted;
+            const accent = currentColors.accent;
+
+            const { src: mdSrcWithPlaceholders, blocks } = extractAndRenderMath(mdSrc);
+            const html = spliceMathBlocks(md.render(mdSrcWithPlaceholders), blocks);
+            const firstLine = (mdSrc.split('\n').find(l => l.trim().startsWith('#')) || '').replace(/^#+\s*/, '').trim();
+            const title = firstLine || 'Markdown 笔记';
+            const date = fmtNow();
+
+            const holder = $('exportHolder');
+            holder.innerHTML =
+                '<div id="exportCard" style="width:580px;padding:52px;background:' + bg +
+                ';font-family:\'Noto Sans SC\',-apple-system,sans-serif">' +
+                '<div style="background:' + card + ';border-radius:20px;padding:44px;box-shadow:0 8px 32px rgba(0,0,0,.1);color:' + text + '">' +
+                '<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">' +
+                '<div style="width:32px;height:32px;background:' + accent + ';border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px">实</div>' +
+                '<span style="font-weight:600;color:' + text + '">实用工具 · Markdown</span>' +
+                '</div>' +
+                '<h1 style="font-size:26px;font-weight:700;margin:0 0 10px;line-height:1.35;color:' + text + '">' + esc(title) + '</h1>' +
+                '<div style="font-size:12px;color:' + muted + ';margin-bottom:20px">' + date + '</div>' +
+                '<div style="width:40px;height:3px;background:' + accent + ';border-radius:2px;margin-bottom:24px"></div>' +
+                '<div class="md-body" style="font-size:15px;line-height:1.9;color:' + text + '">' + html + '</div>' +
+                '<div style="margin-top:32px;padding-top:16px;border-top:1px solid ' + muted + '33">' +
+                '<span style="font-size:11px;color:' + muted + '">来自 tools.oscarstudio.cn</span>' +
+                '</div></div></div>';
+
+            // Inject inline styles for the .md-body children
+            const body = holder.querySelector('.md-body');
+            injectBodyStyles(body, { text, muted, accent, card });
+            // Now the holder is in the DOM with real layout — fix up KaTeX
+            // display containers before html2canvas snapshots them.
+            expandKatexBlocks(holder);
+
+            statusEl.textContent = '生成图片中…';
+            setTimeout(() => {
+                if (typeof html2canvas === 'undefined') {
+                    toast('图片导出库加载中，请稍后再试');
+                    return;
+                }
+                html2canvas(holder.firstElementChild, {
+                    backgroundColor: null,
+                    scale: 2,
+                    useCORS: true
+                }).then((cv) => {
+                    cv.toBlob((b) => {
+                        if (b) {
+                            const a = document.createElement('a');
+                            const url = URL.createObjectURL(b);
+                            a.href = url;
+                            a.download = 'markdown-' + Date.now() + '.png';
+                            document.body.appendChild(a);
+                            a.click();
+                            setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1500);
+                            toast('已下载');
+                        } else {
+                            toast('导出失败');
+                        }
+                        holder.innerHTML = '';
+                        statusEl.textContent = '就绪';
+                    }, 'image/png');
+                }).catch((err) => {
+                    console.error(err);
+                    toast('导出失败：' + (err.message || '未知错误'));
+                    holder.innerHTML = '';
+                    statusEl.textContent = '就绪';
+                });
+            }, 120);
+        }
+
+        function injectBodyStyles(scope, c) {
+            const css = `
+                .md-body h1, .md-body h2, .md-body h3,
+                .md-body h4, .md-body h5, .md-body h6 {
+                    color: ${c.text}; font-weight: 700; line-height: 1.35; margin: 1.2em 0 .5em;
+                }
+                .md-body h1 { font-size: 1.6em; padding-bottom: .3em; border-bottom: 1px solid ${c.muted}22; }
+                .md-body h2 { font-size: 1.35em; }
+                .md-body h3 { font-size: 1.15em; }
+                .md-body h4, .md-body h5, .md-body h6 { font-size: 1em; }
+                .md-body p { margin: .6em 0; }
+                .md-body a { color: ${c.accent}; text-decoration: none; border-bottom: 1px dashed ${c.accent}; }
+                .md-body ul, .md-body ol { padding-left: 1.6em; margin: .6em 0; }
+                .md-body li { margin: .25em 0; }
+                .md-body blockquote {
+                    margin: 1em 0; padding: .4em 1em;
+                    border-left: 4px solid ${c.accent};
+                    background: ${c.accent}11; color: ${c.muted};
+                    border-radius: 0 6px 6px 0;
+                }
+                .md-body code {
+                    font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+                    font-size: .88em; background: ${c.muted}22;
+                    padding: .12em .4em; border-radius: 4px;
+                }
+                .md-body pre {
+                    background: ${c.muted}11; padding: 14px 16px;
+                    border-radius: 8px; overflow-x: auto;
+                    border: 1px solid ${c.muted}22;
+                }
+                .md-body pre code { background: transparent; padding: 0; font-size: .85em; }
+                .md-body table { border-collapse: collapse; margin: 1em 0; width: 100%; }
+                .md-body th, .md-body td {
+                    border: 1px solid ${c.muted}33;
+                    padding: 6px 12px; text-align: left;
+                }
+                .md-body th { background: ${c.muted}11; font-weight: 600; }
+                .md-body hr { border: none; border-top: 1px solid ${c.muted}33; margin: 2em 0; }
+                .md-body img { max-width: 100%; border-radius: 6px; }
+                .md-body .katex { color: ${c.text}; }
+                .md-body .katex-display { margin: 1em 0; overflow: visible; }
+                .md-body .katex-display .katex-html { overflow: visible; }
+                .md-body .katex { line-height: 1.2; }
+            `;
+            const style = document.createElement('style');
+            style.textContent = css;
+            scope.appendChild(style);
+        }
+
+        // ===== Toast =====
+        let toastTimer = null;
+        function toast(msg) {
+            const t = $('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+        }
+
+        // ===== Init =====
+        applyTheme('light');
+        loadDraft();
+        render();
+        statusEl.textContent = '就绪';
+    </script>
+</body>
+
+</html>

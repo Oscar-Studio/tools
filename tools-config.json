@@ -1,0 +1,23 @@
+{
+  "tools": [
+    {
+      "id": "markdown-editor",
+      "name": "Markdown 编辑器",
+      "description": "支持 LaTeX 公式的 Markdown 编辑器，可导出为图片，支持自定义配色",
+      "tags": ["编辑器", "Markdown", "LaTeX"],
+      "icon": "📝",
+      "featured": true,
+      "demoFile": "markdown-editor/index.html"
+    },
+    {
+      "id": "todo",
+      "name": "待办清单",
+      "description": "极简待办管理：优先级、截止日期、分组、子任务、标签、Markdown 备注。未登录本地保存，登录后云端同步。",
+      "tags": ["效率", "待办", "GTD"],
+      "icon": "🍅",
+      "featured": true,
+      "subject": ["通用"],
+      "demoFile": "todo/index.html"
+    }
+  ]
+}

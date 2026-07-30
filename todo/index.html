@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>待办清单 - Oscar Studio</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="https://ai.oscarstudio.cn/opilot.css">
+</head>
+<body data-theme="light">
+    <!-- 顶部条 -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <button id="sidebarToggle" class="icon-btn mobile-only" aria-label="切换分组" title="分组">≡</button>
+            <a href="/" class="brand" aria-label="返回工具首页">
+                <span class="brand-icon">🍅</span>
+                <span class="brand-name">Todo</span>
+            </a>
+        </div>
+        <div class="topbar-center">
+            <div class="search">
+                <span class="search-icon" aria-hidden="true">⌕</span>
+                <input id="searchInput" type="text" placeholder="搜索任务、标签…" autocomplete="off">
+            </div>
+        </div>
+        <div class="topbar-right">
+            <button id="themeBtn" class="icon-btn" title="切换主题" aria-label="切换主题">🌗</button>
+            <div id="syncStatus" class="sync-pill sync-pill--local" title="本地存储">
+                <span class="sync-dot"></span><span class="sync-label">本地</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体三栏 -->
+    <main class="layout">
+        <!-- 左侧：分组 -->
+        <aside class="sidebar" aria-label="分组">
+            <div class="sidebar-head">
+                <h3 class="sidebar-title">分组</h3>
+                <button id="newGroupBtn" class="ghost-btn" title="新建分组">+</button>
+            </div>
+            <ul id="groupList" class="group-list" role="list"></ul>
+        </aside>
+
+        <!-- 中间：任务流 -->
+        <section class="content" aria-label="任务">
+            <div class="content-head">
+                <h2 id="currentGroupName" class="content-title">全部任务</h2>
+                <div class="filter-chips" role="tablist">
+                    <button class="chip is-active" data-filter="all" role="tab">全部</button>
+                    <button class="chip" data-filter="active" role="tab">进行中</button>
+                    <button class="chip" data-filter="done" role="tab">已完成</button>
+                </div>
+            </div>
+            <ul id="taskList" class="task-list" role="list"></ul>
+            <form id="quickAddForm" class="quick-add" autocomplete="off">
+                <span class="quick-add-icon">＋</span>
+                <input id="quickAddInput" type="text" placeholder="输入任务后回车，回车 + 优先级前缀：!! 高 / ! 中">
+                <button type="submit" class="primary-btn" hidden>添加</button>
+            </form>
+        </section>
+
+        <!-- 右侧：详情面板 -->
+        <aside id="detailPanel" class="detail" aria-label="任务详情" hidden>
+            <header class="detail-head">
+                <button id="closeDetailBtn" class="icon-btn" aria-label="关闭">×</button>
+            </header>
+            <div id="detailBody" class="detail-body"></div>
+        </aside>
+    </main>
+
+    <!-- 导入对话框（本地→云端） -->
+    <div id="importDialog" class="dialog-backdrop" hidden>
+        <div class="dialog" role="dialog" aria-labelledby="importTitle">
+            <h3 id="importTitle" class="dialog-title">检测到本地待办草稿</h3>
+            <p class="dialog-desc">
+                当前账号云端尚无数据。本地共 <strong id="importCount">0</strong> 条任务、<strong id="importGroupCount">0</strong> 个分组。
+                是否导入到云端？
+            </p>
+            <ul id="importPreview" class="import-preview"></ul>
+            <div class="dialog-actions">
+                <button id="importSkip" class="ghost-btn">保留本地</button>
+                <button id="importConfirm" class="primary-btn">导入云端</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 轻提示 -->
+    <div id="toast" class="toast" hidden></div>
+
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>
