@@ -19,7 +19,7 @@ export function TopBar() {
     if (document.getElementById(id)) return;
     const s = document.createElement('script');
     s.id = id;
-    s.src = 'https://ai.oscarstudio.cn/user-button.js';
+    s.src = 'https://api.oscarstudio.cn/user-button.js';
     s.crossOrigin = 'anonymous';
     s.async = true;
     document.body.appendChild(s);
