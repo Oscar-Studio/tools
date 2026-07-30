@@ -343,6 +343,17 @@
             line-height: 1;
         }
 
+        /* KaTeX's CSS for the square-root glyph is also missing: the .sqrt-sign
+           wrapper has inline `top: …em` but no `position: relative`, so the
+           top offset is ignored and only the bottom-left tick renders
+           (looks like a backslash). Re-assert position so the overline lands. */
+        .preview .katex .sqrt-sign {
+            position: relative;
+        }
+        .preview .katex .style-wrap {
+            position: relative;
+        }
+
         /* Toast */
         .toast {
             position: fixed;
@@ -437,8 +448,6 @@
     <script src="https://ai.oscarstudio.cn/opilot.js" async></script>
 
     <script type="module">
-        import markdownItKatex from 'https://cdn.jsdelivr.net/npm/markdown-it-katex@2.0.3/+esm';
-
         'use strict';
 
         const STORAGE_KEY = 'md-editor-draft-v1';
@@ -453,16 +462,59 @@
         // Effective theme colors used by export — these reflect the *current* state
         let currentColors = { ...THEMES.light };
 
-        // Initialize markdown-it with KaTeX
+        // markdown-it-katex pulls in katex@^0.6.0, which renders \sqrt as a
+        // bare character (no SVG vinculum above it). Skip the plugin and call
+        // our page-global katex 0.16 directly: extract math first, run
+        // markdown-it on the placeholder-patched source, then splice the
+        // rendered math back in.
         const md = window.markdownit({
             html: false,
             linkify: true,
             typographer: true,
             breaks: false
-        }).use(markdownItKatex, {
-            throwOnError: false,
-            output: 'html'
         });
+
+        // Render `$...$` and `$$...$$` with the global KaTeX 0.16. Returns
+        // { src, blocks } where src has placeholders substituted in and
+        // blocks contains the rendered HTML.
+        function extractAndRenderMath(src) {
+            const blocks = [];
+            // Block math first (multiline $$...$$)
+            src = src.replace(/\$\$([\s\S]+?)\$\$/g, (m, content) => {
+                const ph = `\u0001MATH_B${blocks.length}\u0001`;
+                blocks.push(renderMath(content.trim(), true));
+                return ph;
+            });
+            // Inline math ($...$, but not $$)
+            src = src.replace(/(^|[^$])\$(?!\$)([^\n$]+?)(?<!\$)\$(?!\$)/g, (m, lead, content) => {
+                const ph = `\u0001MATH_I${blocks.length}\u0001`;
+                blocks.push(renderMath(content, false));
+                return lead + ph;
+            });
+            return { src, blocks };
+        }
+
+        function renderMath(latex, displayMode) {
+            if (!window.katex) return `<code>${displayMode ? '$$' : '$'}${latex}${displayMode ? '$$' : '$'}</code>`;
+            try {
+                return window.katex.renderToString(latex, {
+                    displayMode,
+                    throwOnError: false,
+                    output: 'html',
+                    strict: 'ignore',
+                    trust: false
+                });
+            } catch (e) {
+                console.warn('KaTeX error:', e);
+                return `<code class="katex-error">${latex}</code>`;
+            }
+        }
+
+        function spliceMathBlocks(html, blocks) {
+            return html.replace(/\u0001MATH_([BI])(\d+)\u0001/g, (m, kind, idx) => {
+                return blocks[parseInt(idx, 10)] || m;
+            });
+        }
 
         const $ = (id) => document.getElementById(id);
         const editor = $('editor');
@@ -518,13 +570,87 @@
         // inline-block struts that let the actual content overflow the box.
         // The container's intrinsic height only reflects the strut, not the
         // rendered math, so subsequent content overlaps the bottom rows.
-        // Walk every .katex-display after render and grow it to fit.
+        // Walk every .katex-display after render and grow it to fit. We also
+        // add padding-top to absorb the upward overflow from KaTeX's
+        // absolutely positioned vinculum (e.g. \sqrt's overline), which
+        // otherwise renders outside the box and gets clipped by html2canvas.
         function expandKatexBlocks(root) {
             const displays = root.querySelectorAll('.katex-display');
             for (const el of displays) {
                 el.style.height = 'auto';
+                el.style.paddingTop = '';
+                el.style.marginTop = '';
                 const need = el.scrollHeight;
                 if (need > el.clientHeight) el.style.height = need + 'px';
+                // Sweep every descendant, find the highest offset/positioned child
+                // whose top extends above the container, and add that much
+                // padding-top (offset by a matching margin-top on the .katex
+                // subtree so the rendered math stays put).
+                const elBox = el.getBoundingClientRect();
+                const katex = el.querySelector('.katex');
+                if (!katex) continue;
+                let overflowAbove = 0;
+                let largestOverflowEl = null;
+                // Look at every SVG and .hide-tail descendant of the .katex
+                // subtree, plus any rendered (offsetWidth > 0) descendant.
+                // KaTeX uses inline `top: -N em` plus inline-block baseline
+                // alignment on .hide-tail children to position the vinculum
+                // above the box — its actual rendered top may differ from the
+                // expected -N*em due to nested line-height / font-size.
+                const probe = (root) => {
+                    const probeBox = root.querySelector('.katex-display').getBoundingClientRect();
+                    const probeKatex = root.querySelector('.katex-display .katex');
+                    const seen = new Set();
+                    root.querySelectorAll('.katex-display svg, .katex-display .hide-tail').forEach(node => {
+                        const r = node.getBoundingClientRect();
+                        if (r.height > 0 && r.top < probeBox.top) {
+                            const diff = probeBox.top - r.top;
+                            if (diff > overflowAbove) {
+                                overflowAbove = diff;
+                                largestOverflowEl = { tag: node.tagName, cls: (node.className||'').toString().substring(0, 30), top: r.top, h: r.height, w: node.offsetWidth };
+                            }
+                        }
+                        seen.add(node);
+                    });
+                    // Also sweep the .katex subtree for any other rendered
+                    // child above the box (in case the .hide-tail itself
+                    // stays inside but its SVG path renders above).
+                    root.querySelectorAll('.katex-display .katex *').forEach(node => {
+                        if (seen.has(node)) return;
+                        let isRenderable = node.offsetWidth > 0;
+                        if (!isRenderable && node.tagName.toLowerCase() === 'svg') {
+                            const r = node.getBoundingClientRect();
+                            isRenderable = r.width > 0 && r.height > 0;
+                        }
+                        if (!isRenderable) return;
+                        const r = node.getBoundingClientRect();
+                        if (r.height > 0 && r.top < probeBox.top) {
+                            const diff = probeBox.top - r.top;
+                            if (diff > overflowAbove) {
+                                overflowAbove = diff;
+                                largestOverflowEl = { tag: node.tagName, cls: (node.className||'').toString().substring(0, 30), top: r.top, h: r.height, w: node.offsetWidth };
+                            }
+                        }
+                    });
+                };
+                // In detached roots, getBoundingClientRect returns zeros. Attach
+                // a temporary clone into the document so we can read positions.
+                if (elBox.width === 0 && elBox.height === 0 && root.parentElement !== document.body) {
+                    const clone = root.cloneNode(true);
+                    clone.style.position = 'absolute';
+                    clone.style.left = '-99999px';
+                    clone.style.top = '0';
+                    clone.style.width = '760px';
+                    document.body.appendChild(clone);
+                    probe(clone);
+                    clone.remove();
+                } else {
+                    probe(root);
+                }
+                if (overflowAbove > 0) {
+                    el.style.paddingTop = overflowAbove + 'px';
+                    katex.style.marginTop = overflowAbove + 'px';
+                }
             }
         }
 
@@ -588,7 +714,9 @@
             const src = editor.value;
             // Highlight overlay — keep last char as a trailing space so it scrolls correctly
             editorHl.innerHTML = highlightSource(src);
-            preview.innerHTML = md.render(src);
+            const { src: srcWithPlaceholders, blocks } = extractAndRenderMath(src);
+            const rendered = spliceMathBlocks(md.render(srcWithPlaceholders), blocks);
+            preview.innerHTML = rendered;
             expandKatexBlocks(preview);
             fixKatexScripts(preview);
         }
@@ -775,13 +903,8 @@ function hello(name) {
             const muted = currentColors.muted;
             const accent = currentColors.accent;
 
-            const html = md.render(mdSrc);
-            // Expand KaTeX block formulas inside the rendered HTML
-            const tmp = document.createElement('div');
-            tmp.innerHTML = html;
-            expandKatexBlocks(tmp);
-            fixKatexScripts(tmp);
-            const htmlExpanded = tmp.innerHTML;
+            const { src: mdSrcWithPlaceholders, blocks } = extractAndRenderMath(mdSrc);
+            const html = spliceMathBlocks(md.render(mdSrcWithPlaceholders), blocks);
             const firstLine = (mdSrc.split('\n').find(l => l.trim().startsWith('#')) || '').replace(/^#+\s*/, '').trim();
             const title = firstLine || 'Markdown 笔记';
             const date = fmtNow();
@@ -798,7 +921,7 @@ function hello(name) {
                 '<h1 style="font-size:26px;font-weight:700;margin:0 0 10px;line-height:1.35;color:' + text + '">' + esc(title) + '</h1>' +
                 '<div style="font-size:12px;color:' + muted + ';margin-bottom:20px">' + date + '</div>' +
                 '<div style="width:40px;height:3px;background:' + accent + ';border-radius:2px;margin-bottom:24px"></div>' +
-                '<div class="md-body" style="font-size:15px;line-height:1.9;color:' + text + '">' + htmlExpanded + '</div>' +
+                '<div class="md-body" style="font-size:15px;line-height:1.9;color:' + text + '">' + html + '</div>' +
                 '<div style="margin-top:32px;padding-top:16px;border-top:1px solid ' + muted + '33">' +
                 '<span style="font-size:11px;color:' + muted + '">来自 tools.oscarstudio.cn</span>' +
                 '</div></div></div>';
@@ -806,6 +929,10 @@ function hello(name) {
             // Inject inline styles for the .md-body children
             const body = holder.querySelector('.md-body');
             injectBodyStyles(body, { text, muted, accent, card });
+            // Now the holder is in the DOM with real layout — fix up KaTeX
+            // display containers before html2canvas snapshots them.
+            expandKatexBlocks(holder);
+            fixKatexScripts(holder);
 
             statusEl.textContent = '生成图片中…';
             setTimeout(() => {
