@@ -87,7 +87,7 @@ class WebGLGlass {
     this.params = { ...DEFAULT_PARAMS, ...params };
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'lg-webgl-canvas';
-    this.canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none';
+    this.canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:3;pointer-events:none';
     document.body.prepend(this.canvas);
 
     const gl = this.canvas.getContext('webgl', {

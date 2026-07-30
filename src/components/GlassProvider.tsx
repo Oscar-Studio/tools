@@ -3,8 +3,6 @@ import { Glass } from '@samasante/liquid-glass';
 import { initWebGLGlass, destroyWebGLGlass } from '../lib/webglGlass';
 import { useUserLiquidGlass } from '../hooks/useUserLiquidGlass';
 
-// 全屏 liquid-glass canvas 的 ambient optics（与 settings.html LG_PRESETS.high 对齐的 6 字段）
-// 这只影响全屏的 liquid-glass-main.js；<Glass> 组件用 CARD_OPTICS_FROM_CONTEXT
 const AMBIENT_OPTICS = {
   sheenWidth: 30,
   strength: 0.15,
@@ -47,7 +45,7 @@ function applyBackgroundFx(cfg: BgCfg | null) {
   layer.style.cssText = [
     'position:fixed',
     'inset:0',
-    'z-index:-1',
+    'z-index:0',
     'pointer-events:none',
     `background-image:url(${cfg.url})`,
     'background-size:cover',
@@ -55,6 +53,9 @@ function applyBackgroundFx(cfg: BgCfg | null) {
     'background-repeat:no-repeat',
     'background-attachment:fixed',
     blur > 0 ? `filter:blur(${blur}px)` : '',
+    blur > 0 ? `-webkit-filter:blur(${blur}px)` : '',
+    blur > 0 ? 'will-change:transform' : '',
+    blur > 0 ? 'transform:translateZ(0)' : '',
   ].filter(Boolean).join(';');
   document.body.appendChild(layer);
 
@@ -64,7 +65,7 @@ function applyBackgroundFx(cfg: BgCfg | null) {
     mask.style.cssText = [
       'position:fixed',
       'inset:0',
-      'z-index:-1',
+      'z-index:1',
       'pointer-events:none',
       'background:#000',
       `opacity:${overlay}`,
@@ -72,8 +73,6 @@ function applyBackgroundFx(cfg: BgCfg | null) {
     document.body.appendChild(mask);
   }
 
-  body.style.position = 'relative';
-  body.style.isolation = 'isolate';
   body.style.background = 'transparent';
 }
 
@@ -96,9 +95,10 @@ async function resolveBg(): Promise<BgCfg> {
   return fallback;
 }
 
-function isChromium(): boolean {
-  const ua = navigator.userAgent;
-  return /Chrome|Chromium|Edg\//.test(ua) && !/CriOS|EdgiOS/.test(ua);
+function supportsBackdropFilter(): boolean {
+  if (typeof CSS === 'undefined' || !CSS.supports) return false;
+  return CSS.supports('backdrop-filter', 'blur(1px)')
+    || CSS.supports('-webkit-backdrop-filter', 'blur(1px)');
 }
 
 export function useGlassBackground() {
@@ -122,7 +122,7 @@ export function useGlassBackground() {
 
     resolveBg().then(applyBackgroundFx);
 
-    if (!isChromium()) {
+    if (!supportsBackdropFilter()) {
       const inst = initWebGLGlass({ ...AMBIENT_OPTICS, ...userOptics });
       if (!inst) {
         observer.disconnect();
