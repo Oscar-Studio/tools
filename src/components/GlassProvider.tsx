@@ -1,16 +1,4 @@
-import { useEffect, useRef } from 'react';
-import { Glass } from '@samasante/liquid-glass';
-import { initWebGLGlass, destroyWebGLGlass } from '../lib/webglGlass';
-import { useUserLiquidGlass } from '../hooks/useUserLiquidGlass';
-
-const AMBIENT_OPTICS = {
-  sheenWidth: 30,
-  strength: 0.15,
-  curvature: 0.15,
-  frost: 3,
-  dispersion: 0.10,
-  brightness: 0.04,
-};
+import { useEffect } from 'react';
 
 const API_BASE = 'https://api.oscarstudio.cn';
 const DEFAULT_BG = `${API_BASE}/default-bg.jpeg`;
@@ -40,6 +28,9 @@ function applyBackgroundFx(cfg: BgCfg | null) {
   const overlay = typeof cfg.overlay === 'number' && Number.isFinite(cfg.overlay) ? cfg.overlay : 0;
   const blur = typeof cfg.blur === 'number' && Number.isFinite(cfg.blur) ? cfg.blur : 0;
 
+  // 使用正 z-index 分层，避免 Safari 中 body 上的 stacking context 把
+  // z-index:-1 误压在 body 背景下，导致加入遮罩后只剩玻璃模块透出背景。
+  // 层级：userBgLayer=0、userBgMask=1、内容需 ≥ 2。
   const layer = document.createElement('div');
   layer.id = 'userBgLayer';
   layer.style.cssText = [
@@ -95,82 +86,23 @@ async function resolveBg(): Promise<BgCfg> {
   return fallback;
 }
 
-function supportsBackdropFilter(): boolean {
-  if (typeof CSS === 'undefined' || !CSS.supports) return false;
-  return CSS.supports('backdrop-filter', 'blur(1px)')
-    || CSS.supports('-webkit-backdrop-filter', 'blur(1px)');
-}
-
-export function useGlassBackground() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { optics: userOptics } = useUserLiquidGlass();
-
+/**
+ * 应用用户自定义背景（无则用 default-bg.jpeg）。
+ * 与 user-button.js 通过 `body.style.backgroundImage` 互斥，
+ * 任意一方设置过则对方不再覆盖。
+ */
+export function useUserBackground() {
   useEffect(() => {
-    document.body.classList.add('no-lg-refraction');
-
-    const observer = new MutationObserver(() => {
-      const bg = document.body.style.backgroundImage;
-      if (!bg || bg === 'none') {
-        resolveBg().then(cfg => {
-          if (!document.body.style.backgroundImage || document.body.style.backgroundImage === 'none') {
-            applyBackgroundFx(cfg);
-          }
-        });
-      }
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['style'] });
-
+    // 移除 MutationObserver：原本的实现会因为 applyBackgroundFx 写入 body.style
+    // 触发 observer 回调，回调里又调 applyBackgroundFx，造成无限循环
+    // （Safari 尤甚，会直接卡死整个页面）。
+    // 现在只首次拉一次配置即可，与 main-station 行为一致。
+    //
+    // 协调点：user-button.js（共享 SDK）会在登录态、且用户设置了 backgroundImage
+    // 时创建自己的 userBgLayer/userBgMask（z-index:-1），并把 body.isolation 设成
+    // 'isolate' 作为"已接管"标记。如果我们再 applyBackgroundFx，会把它删掉重建，
+    // 出现两层 background 互相打架。这里检测到 isolation 已经被设过就让位。
+    if (document.body.style.isolation === 'isolate') return;
     resolveBg().then(applyBackgroundFx);
-
-    if (!supportsBackdropFilter()) {
-      const inst = initWebGLGlass({ ...AMBIENT_OPTICS, ...userOptics });
-      if (!inst) {
-        observer.disconnect();
-        console.warn('WebGL fallback unavailable');
-        return;
-      }
-      return () => {
-        observer.disconnect();
-        destroyWebGLGlass();
-      };
-    }
-    return () => {
-      observer.disconnect();
-    };
-  }, [userOptics]);
-
-  if (canvasRef.current === null) {
-    canvasRef.current = document.getElementById('lg-webgl-canvas') as HTMLCanvasElement | null;
-  }
-}
-
-interface GlassWrapProps {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-  borderRadius?: number;
-  maxDpr?: number;
-  filterResolution?: number;
-}
-
-export function GlassWrap({
-  children,
-  className,
-  style,
-  borderRadius = 16,
-  maxDpr,
-  filterResolution,
-}: GlassWrapProps) {
-  const { optics } = useUserLiquidGlass();
-  return (
-    <Glass
-      className={className}
-      style={{ borderRadius, ...style }}
-      optics={optics}
-      maxDpr={maxDpr}
-      filterResolution={filterResolution}
-    >
-      {children}
-    </Glass>
-  );
+  }, []);
 }

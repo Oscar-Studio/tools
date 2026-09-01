@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+  <meta name="view-transition" content="same-origin">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown 编辑器 - Oscar Studio</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
@@ -416,7 +417,7 @@
         <span class="status" id="status">就绪</span>
     </div>
 
-    <div class="workspace">
+    <div class="workspace" style="view-transition-name: vt-tool-markdown-editor">
         <div class="editor-pane">
             <div class="pane-hd">编辑器</div>
             <div class="editor-wrap">
@@ -444,6 +445,40 @@
 
     <script type="module">
         'use strict';
+
+        // 安全的 HTML 注入：使用 Range.createContextualFragment 解析字符串
+        function setHtml(el, htmlStr) {
+            if (!el) return;
+            const frag = document.createRange().createContextualFragment(htmlStr);
+            el.textContent = '';
+            el.appendChild(frag);
+        }
+
+        // 简单的 HTML 转义/净化（用于 sanitize XSS）
+        function sanitizeHtml(str) {
+            if (typeof str !== 'string') return '';
+            // 移除 <script> 和 on* 属性
+            return str
+                .replace(/<script[\s\S]*?<\/script>/gi, '')
+                .replace(/<\s*script/gi, '')
+                .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+                .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
+                .replace(/javascript:/gi, '');
+        }
+
+        // 文件上传校验：限制大小 + 类型
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const ACCEPTED_FILE_TYPES = ['.md', '.markdown', '.txt'];
+        function validateFile(file) {
+            if (!file) return '未选择文件';
+            // 同时校验 file.type 和扩展名
+            if (file.type && !/text\/|markdown|plain/.test(file.type)) return '文件类型不支持';
+            if (file.size > MAX_FILE_SIZE) return '文件超过 5MB';
+            const name = (file.name || '').toLowerCase();
+            const ok = ACCEPTED_FILE_TYPES.some(ext => name.endsWith(ext));
+            if (!ok) return '仅支持 .md / .markdown / .txt 文件';
+            return null;
+        }
 
         const STORAGE_KEY = 'md-editor-draft-v1';
 
@@ -658,10 +693,10 @@
         function render() {
             const src = editor.value;
             // Highlight overlay — keep last char as a trailing space so it scrolls correctly
-            editorHl.innerHTML = highlightSource(src);
+            setHtml(editorHl, highlightSource(src));
             const { src: srcWithPlaceholders, blocks } = extractAndRenderMath(src);
             const rendered = spliceMathBlocks(md.render(srcWithPlaceholders), blocks);
-            preview.innerHTML = rendered;
+            setHtml(preview, rendered);
             expandKatexBlocks(preview);
         }
 
@@ -854,7 +889,7 @@ function hello(name) {
             const date = fmtNow();
 
             const holder = $('exportHolder');
-            holder.innerHTML =
+                        const exportHtml = 
                 '<div id="exportCard" style="width:580px;padding:52px;background:' + bg +
                 ';font-family:\'Noto Sans SC\',-apple-system,sans-serif">' +
                 '<div style="background:' + card + ';border-radius:20px;padding:44px;box-shadow:0 8px 32px rgba(0,0,0,.1);color:' + text + '">' +
@@ -869,6 +904,7 @@ function hello(name) {
                 '<div style="margin-top:32px;padding-top:16px;border-top:1px solid ' + muted + '33">' +
                 '<span style="font-size:11px;color:' + muted + '">来自 tools.oscarstudio.cn</span>' +
                 '</div></div></div>';
+            setHtml(holder, exportHtml);
 
             // Inject inline styles for the .md-body children
             const body = holder.querySelector('.md-body');

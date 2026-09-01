@@ -9,7 +9,8 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         { src: 'tools-config.json', dest: '.' },
-        { src: 'markdown-editor/*', dest: 'markdown-editor' },
+        { src: 'legacy-tools/*', dest: '.' },
+        { src: 'legacy-tools/word-counter/*', dest: 'legacy-tools/word-counter' },
         { src: 'CNAME', dest: '.' },
       ],
     }),

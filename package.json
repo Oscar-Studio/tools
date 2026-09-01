@@ -7,14 +7,18 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173",
-    "deploy": "gh-pages -d dist --no-history",
-    "predeploy": "npm run build"
+    "deploy": "bash ../sync-site.sh tools /www/wwwroot/tools.oscarstudio.cn",
+    "test:word-counter": "node tests/word-counter-stats.test.mjs && node tests/word-counter-segments.test.mjs",
+    "test:codec": "node tests/codec.test.mjs && node tests/codec-hashes.test.mjs",
+    "test": "node tests/codec.test.mjs && node tests/codec-hashes.test.mjs && node tests/word-counter-stats.test.mjs && node tests/word-counter-segments.test.mjs",
+    "prebuild": "node scripts/check-legacy-js.mjs"
   },
   "dependencies": {
-    "@samasante/liquid-glass": "^0.1.1",
     "framer-motion": "^11.11.17",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^6.28.0",
+    "tldraw": "^3.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

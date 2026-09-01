@@ -1,0 +1,175 @@
+/* =============================================================
+ * Oscar Studio · tools 设计令牌
+ * =============================================================
+ *
+ * 两套 [data-tools-theme] 主题：
+ *   - classic（默认）：现有 emoji 卡片网格
+ *   - studio         ：Linear.app 风生产力设计
+ *                     （深靛蓝 accent + split hero + 状态点 + 圆角 12px 卡片）
+ *
+ * 同时支持 light/dark（沿用 [data-theme]），跟 toolsTheme 正交。
+ * 用法：main.tsx 顶部 import './styles/tokens.css';
+ * ============================================================= */
+
+:root {
+  /* ---- 字号 / 行高 ---- */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --fs-eyebrow: 11px;
+  --fs-label: 12px;
+  --fs-body: 14px;
+  --fs-body-lg: 16px;
+  --fs-h3: 20px;
+  --fs-h2: 28px;
+  --fs-h1: 40px;
+
+  /* ---- 间距 ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* ---- 圆角 ---- */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 9999px;
+
+  /* ---- 动效 ---- */
+  --ease-snap: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-gentle: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+}
+
+/* =============================================================
+ * 主题：classic（默认）—— 现有 tools 卡片网格（不动）
+ * ============================================================= */
+:root,
+:root[data-tools-theme="classic"] {
+  --canvas: #fafafa;
+  --canvas-card: #ffffff;
+  --canvas-soft: #f5f5f5;
+  --surface: #ffffff;
+  --surface-soft: #f5f5f5;
+  --surface-card: #ffffff;
+  --hairline: #e5e5e5;
+  --ink: #0a0a0a;
+  --body: #2a2a2a;
+  --muted: #6b6b6b;
+  --primary: #6366f1;
+  --accent: #ec4899;
+
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --card-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+  --card-border: 1px solid var(--hairline);
+  --card-border-hover: 1px solid var(--primary);
+  --nav-blur: blur(8px);
+  --nav-bg: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="dark"]:root,
+[data-theme="dark"]:root[data-tools-theme="classic"] {
+  --canvas: #0a0a0f;
+  --canvas-card: #13131a;
+  --canvas-soft: #0f0f15;
+  --surface: #13131a;
+  --surface-soft: #0f0f15;
+  --surface-card: #1a1a24;
+  --hairline: #232330;
+  --ink: #f5f5f7;
+  --body: #c5c5cf;
+  --muted: #6f6f7f;
+  --primary: #818cf8;
+  --accent: #f472b6;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.3);
+  --nav-bg: rgba(10, 10, 15, 0.85);
+}
+
+/* =============================================================
+ * 主题：studio —— Linear.app 风生产力设计
+ * 浅色：奶白画布 + 深靛蓝 accent + 状态绿点
+ * 深色：近黑画布 + 浅靛蓝 accent
+ *
+ * 关键设计语言：
+ *   - 圆角 12px（卡片） + 圆角 6px（标签、按钮）
+ *   - 1px hairline + 极轻阴影
+ *   - 状态点（绿点）作为视觉锚点
+ *   - split hero：左 = 标题 + 副标题；右 = bullet 列表 + 状态点
+ * ============================================================= */
+:root[data-tools-theme="studio"] {
+  /* 浅色（默认） */
+  --canvas: #f5f3ef;            /* 暖米底（跟 word-counter 同款） */
+  --canvas-card: #fffdfa;
+  --canvas-soft: #ebe7df;
+  --surface: #fffdfa;
+  --surface-soft: #faf8f4;
+  --surface-card: #fffdfa;
+  --hairline: #e9e5de;
+  --hairline-soft: #ebe6df;
+  --ink: #1f2328;                /* 接近黑 */
+  --body: #3d3d3a;
+  --muted: #8b8984;
+  --primary: #5e6ad2;            /* Linear 标志性靛蓝 */
+  --primary-soft: #eef0ff;
+  --success: #4cb782;             /* Linear 状态绿 */
+  --warning: #f2c94c;
+
+  --card-shadow: 0 1px 2px rgba(31, 35, 40, 0.04), 0 0 0 1px rgba(31, 35, 40, 0.04);
+  --card-shadow-hover: 0 1px 2px rgba(94, 106, 210, 0.10), 0 0 0 1px var(--primary), 0 4px 12px rgba(94, 106, 210, 0.08);
+  --card-border: 1px solid var(--hairline);
+  --card-border-hover: 1px solid var(--primary);
+
+  --hero-gradient: radial-gradient(
+    circle at 90% 10%,
+    rgba(94, 106, 210, 0.12) 0%,
+    transparent 50%
+  );
+  --ambient-1: #dfe1ff;
+  --ambient-2: #f3ddca;
+
+  --nav-blur: blur(10px);
+  --nav-bg: color-mix(in srgb, var(--canvas) 86%, transparent);
+}
+
+[data-theme="dark"]:root[data-tools-theme="studio"] {
+  /* 深色版 studio */
+  --canvas: #0e1116;             /* Linear 深色底 */
+  --canvas-card: #16181d;
+  --canvas-soft: #0a0c10;
+  --surface: #16181d;
+  --surface-soft: #121319;
+  --surface-card: #1a1d24;
+  --hairline: #262932;
+  --hairline-soft: #1d2027;
+  --ink: #e6e8eb;
+  --body: #a8acb3;
+  --muted: #6f747c;
+  --primary: #7b85ff;
+  --primary-soft: #20243a;
+  --success: #5cc28a;
+  --warning: #f5cd5e;
+
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.30), 0 0 0 1px rgba(0, 0, 0, 0.40);
+  --card-shadow-hover: 0 1px 2px rgba(123, 133, 255, 0.18), 0 0 0 1px var(--primary), 0 4px 12px rgba(123, 133, 255, 0.14);
+  --card-border: 1px solid var(--hairline);
+  --card-border-hover: 1px solid var(--primary);
+
+  --hero-gradient: radial-gradient(
+    circle at 90% 10%,
+    rgba(123, 133, 255, 0.18) 0%,
+    transparent 50%
+  );
+  --ambient-1: #1f2547;
+  --ambient-2: #2d2336;
+
+  --nav-blur: blur(10px);
+  --nav-bg: color-mix(in srgb, var(--canvas) 86%, transparent);
+}

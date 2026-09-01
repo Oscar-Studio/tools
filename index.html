@@ -3,17 +3,43 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5">
+    <meta name="theme-color" content="#010409">
+    <meta name="view-transition" content="same-origin">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <title>实用工具 - Oscar Studio</title>
-    <link rel="stylesheet" href="/style.css?v=11">
     <link rel="stylesheet" href="/user-auth.css">
+    <script>
+      // 渲染前应用主题，避免闪烁
+      (function() {
+        try {
+          var t = localStorage.getItem('oscar-theme');
+          var resolved;
+          if (t === 'light' || t === 'dark') {
+            resolved = t;
+          } else {
+            // system 或未设置：跟随系统
+            resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-theme', resolved);
+        } catch (e) { /* ignore */ }
+      })();
+      // 渲染前应用 tools 主题（classic / studio），避免闪烁
+      (function() {
+        try {
+          var tt = localStorage.getItem('oscar-tools-theme');
+          if (tt !== 'classic' && tt !== 'studio') tt = 'classic';
+          document.documentElement.setAttribute('data-tools-theme', tt);
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
+
 </head>
 
 <body>
     <div id="root"></div>
-    <!-- WebGL 液态玻璃 canvas（由 React 组件按需初始化） -->
-    <canvas id="liquid-glass-canvas" data-lg-auto aria-hidden="true"></canvas>
     <!-- 共享头部/侧栏挂载点（保留给 user-button.js / opilot.js） -->
     <div id="userButtonContainer" style="display:none"></div>
     <script type="module" src="/src/main.tsx"></script>

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="view-transition" content="same-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Base64 / URL / Hex / Unicode / HTML / ROT13 / Punycode 编码解码；MD5 / SHA-1/256/384/512 哈希；HMAC-SHA256/512；JWT 解析。全部本地运行，不上传数据。">
+  <title>编解码器 · Oscar Studio</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="back-link" href="/" aria-label="返回工具首页">
+      <span aria-hidden="true">←</span>
+      <span>工具集</span>
+    </a>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">🔐</span>
+      <span>编解码器</span>
+      <span class="beta">CODEC LAB</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-button" id="themeBtn" type="button" aria-label="切换主题" title="切换主题">☼</button>
+    </div>
+  </header>
+
+  <main class="app-shell" style="view-transition-name: vt-tool-codec">
+    <section class="intro-row">
+      <div>
+        <p class="eyebrow">EVERYTHING STAYS LOCAL</p>
+        <h1>把每一段字节，<em>翻译干净。</em></h1>
+        <p class="intro-copy">编码、解码、哈希、签名、JWT — 全部在你的浏览器里完成。适合临时算 Hash、给链接编码、看看 JSON Web Token 里到底写了什么。</p>
+      </div>
+      <div class="privacy-note">
+        <span class="privacy-dot"></span>
+        <span>纯本地运行<br><small>你的输入不会离开设备</small></span>
+      </div>
+    </section>
+
+    <nav class="tabs" role="tablist" aria-label="功能切换">
+      <button class="tab is-active" data-tab="encode" role="tab" aria-selected="true">编码 / 解码</button>
+      <button class="tab" data-tab="hash" role="tab" aria-selected="false">哈希</button>
+      <button class="tab" data-tab="hmac" role="tab" aria-selected="false">HMAC</button>
+      <button class="tab" data-tab="jwt" role="tab" aria-selected="false">JWT</button>
+    </nav>
+
+    <!-- ===================== 编码 / 解码 ===================== -->
+    <section class="tab-panel is-active" id="panel-encode" role="tabpanel" aria-labelledby="tab-encode">
+      <div class="surface card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label" id="modeLabel">ENCODE</span>
+            <h2 id="modeTitle">输入文本</h2>
+          </div>
+          <div class="surface-actions">
+            <button class="text-button" id="encodeSampleBtn" type="button">填入示例</button>
+            <button class="text-button" id="encodeClearBtn" type="button">清空</button>
+            <button class="swap-btn" id="modeToggleBtn" type="button" aria-label="切换编码 / 解码" title="切换编码 / 解码">
+              <span class="swap-icons" aria-hidden="true"><span>编</span><span>⇄</span><span>解</span></span>
+              <span class="swap-text" id="modeSwapText">切换到解码</span>
+            </button>
+          </div>
+        </div>
+        <textarea id="modeInput" class="big-input" spellcheck="false" placeholder="在左侧输入要转换的文本……"></textarea>
+      </div>
+
+      <div class="output-grid" id="encodeOutputs">
+        <article class="output-card card" data-encoder="base64">
+          <header><h3>Base64</h3><label class="check"><input type="checkbox" id="b64UrlSafe"> URL-safe (-_)</label>
+            <button class="copy-btn" type="button">复制</button></header>
+          <output data-out="base64"></output>
+        </article>
+        <article class="output-card card" data-encoder="url">
+          <header><h3>URL 编码 (%xx)</h3><button class="copy-btn" type="button">复制</button></header>
+          <output data-out="url"></output>
+        </article>
+        <article class="output-card card" data-encoder="hex">
+          <header><h3>Hex (UTF-8 字节)</h3><button class="copy-btn" type="button">复制</button></header>
+          <output data-out="hex"></output>
+        </article>
+        <article class="output-card card" data-encoder="unicode">
+          <header><h3>Unicode 转义</h3><label class="check"><input type="checkbox" id="unicodeXhh"> \xHH 简写</label>
+            <button class="copy-btn" type="button">复制</button></header>
+          <output data-out="unicode"></output>
+        </article>
+        <article class="output-card card" data-encoder="html">
+          <header><h3>HTML 实体</h3><button class="copy-btn" type="button">复制</button></header>
+          <output data-out="html"></output>
+        </article>
+        <article class="output-card card" data-encoder="rot13">
+          <header><h3>ROT13</h3><button class="copy-btn" type="button">复制</button></header>
+          <output data-out="rot13"></output>
+        </article>
+        <article class="output-card card" data-encoder="punycode">
+          <header><h3>Punycode</h3><button class="copy-btn" type="button">复制</button></header>
+          <output data-out="punycode"></output>
+        </article>
+        <article class="output-card card" data-encoder="ascii">
+          <header><h3>ASCII 转储</h3><button class="copy-btn" type="button">复制</button></header>
+          <output data-out="ascii"></output>
+        </article>
+      </div>
+
+      <div class="decoder-results" id="decodeResults" hidden></div>
+      <p class="decoder-hint" id="decodeHint" hidden>粘贴一段已编码的文本，下面会同时按多种格式尝试解码。不识别的格式会被划掉。</p>
+    </section>
+
+    <!-- ===================== 哈希 ===================== -->
+    <section class="tab-panel" id="panel-hash" role="tabpanel" aria-labelledby="tab-hash" hidden>
+      <div class="surface card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label">HASH INPUT</span>
+            <h2>输入文本</h2>
+          </div>
+          <div class="surface-actions">
+            <label class="check">
+              <input type="checkbox" id="hashUppercase"> 大写 HEX
+            </label>
+            <button class="text-button" id="hashSampleBtn" type="button">填入示例</button>
+            <button class="text-button" id="hashClearBtn" type="button">清空</button>
+          </div>
+        </div>
+        <textarea id="hashInput" class="big-input" spellcheck="false" placeholder="要计算哈希的文本……"></textarea>
+      </div>
+
+      <div class="hash-grid">
+        <article class="hash-card card"><header><h3>MD5</h3><small>128 bit · 仅遗留兼容</small><button class="copy-btn" type="button">复制</button></header><code data-out="md5"></code></article>
+        <article class="hash-card card"><header><h3>SHA-1</h3><small>160 bit</small><button class="copy-btn" type="button">复制</button></header><code data-out="sha1"></code></article>
+        <article class="hash-card card"><header><h3>SHA-256</h3><small>256 bit</small><button class="copy-btn" type="button">复制</button></header><code data-out="sha256"></code></article>
+        <article class="hash-card card"><header><h3>SHA-384</h3><small>384 bit</small><button class="copy-btn" type="button">复制</button></header><code data-out="sha384"></code></article>
+        <article class="hash-card card"><header><h3>SHA-512</h3><small>512 bit</small><button class="copy-btn" type="button">复制</button></header><code data-out="sha512"></code></article>
+      </div>
+    </section>
+
+    <!-- ===================== HMAC ===================== -->
+    <section class="tab-panel" id="panel-hmac" role="tabpanel" aria-labelledby="tab-hmac" hidden>
+      <div class="surface card">
+        <div class="surface-toolbar">
+          <div class="surface-title"><span class="label">HMAC</span><h2>输入消息 & 密钥</h2></div>
+          <div class="surface-actions">
+            <label class="check">格式
+              <select id="hmacFormat">
+                <option value="hex" selected>Hex</option>
+                <option value="base64">Base64</option>
+              </select>
+            </label>
+            <button class="text-button" id="hmacSampleBtn" type="button">填入示例</button>
+            <button class="text-button" id="hmacClearBtn" type="button">清空</button>
+          </div>
+        </div>
+        <div class="hmac-fields">
+          <label>
+            <span class="label">KEY 密钥</span>
+            <input id="hmacKey" type="text" class="text-input" placeholder="HMAC 使用的密钥">
+          </label>
+          <label>
+            <span class="label">MSG 消息</span>
+            <textarea id="hmacMsg" class="big-input" spellcheck="false" placeholder="要签名的消息"></textarea>
+          </label>
+        </div>
+      </div>
+      <div class="hash-grid">
+        <article class="hash-card card"><header><h3>HMAC-SHA256</h3><small>RFC 2104</small><button class="copy-btn" type="button">复制</button></header><code data-out="hmac256"></code></article>
+        <article class="hash-card card"><header><h3>HMAC-SHA512</h3><small>RFC 2104</small><button class="copy-btn" type="button">复制</button></header><code data-out="hmac512"></code></article>
+      </div>
+    </section>
+
+    <!-- ===================== JWT ===================== -->
+    <section class="tab-panel" id="panel-jwt" role="tabpanel" aria-labelledby="tab-jwt" hidden>
+      <div class="surface card">
+        <div class="surface-toolbar">
+          <div class="surface-title"><span class="label">JWT</span><h2>粘贴 Token</h2></div>
+          <div class="surface-actions">
+            <button class="text-button" id="jwtSampleBtn" type="button">填入示例</button>
+            <button class="text-button" id="jwtClearBtn" type="button">清空</button>
+          </div>
+        </div>
+        <textarea id="jwtInput" class="big-input" spellcheck="false" placeholder="eyJhbGciOi... 三段由 . 分隔的字符串"></textarea>
+        <div id="jwtStatus" class="jwt-status"></div>
+      </div>
+
+      <div class="jwt-grid">
+        <article class="jwt-card card">
+          <header><h3>Header</h3><button class="copy-btn" type="button">复制</button></header>
+          <pre data-out="jwtHeader"></pre>
+        </article>
+        <article class="jwt-card card">
+          <header>
+            <h3>Payload</h3>
+            <span class="jwt-meta" data-out="jwtMeta"></span>
+            <button class="copy-btn" type="button">复制</button>
+          </header>
+          <pre data-out="jwtPayload"></pre>
+        </article>
+        <article class="jwt-card card">
+          <header><h3>Signature</h3><button class="copy-btn" type="button">复制</button></header>
+          <pre data-out="jwtSig"></pre>
+        </article>
+      </div>
+
+      <p class="tip"><span aria-hidden="true">✦</span> 仅解析 JWT，不验证签名。需要签名校验时，请在服务端完成。</p>
+    </section>
+
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

@@ -3,3 +3,9 @@ dist
 .DS_Store
 *.log
 .vite
+# macOS AppleDouble / extended-attribute 元数据（exFAT 等非 APFS 文件系统
+# 在 Finder 复制/同步时会留下这些噪声文件，会让 git 报 non-monotonic index 错）
+._*
+
+# tsbuildinfo 不应该被跟踪（构建产物）
+tsconfig.tsbuildinfo

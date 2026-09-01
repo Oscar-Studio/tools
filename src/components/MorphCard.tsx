@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Tool } from '../types';
-import { GlassWrap } from './GlassProvider';
-import { useUserLiquidGlass } from '../hooks/useUserLiquidGlass';
 import type { Phase } from '../App';
 
 interface Props {
@@ -18,7 +16,6 @@ const SPRING = { type: 'spring' as const, stiffness: 320, damping: 28, mass: 0.8
 
 export function MorphCard({ tool, sourceRect, phase, onClose, onPhaseChange }: Props) {
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
-  const { quality, budget: glassBudget } = useUserLiquidGlass();
 
   useEffect(() => {
     const update = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
@@ -79,7 +76,7 @@ export function MorphCard({ tool, sourceRect, phase, onClose, onPhaseChange }: P
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={quality === 'low' ? { duration: 0 } : { duration: 0.5 }}
+            transition={{ duration: 0.5 }}
             onClick={onClose}
           />
           <motion.div
@@ -112,24 +109,19 @@ export function MorphCard({ tool, sourceRect, phase, onClose, onPhaseChange }: P
               minHeight: initialH,
               opacity: 0.95,
             }}
-            transition={quality === 'low' ? { duration: 0 } : SPRING}
+            transition={SPRING}
             onAnimationComplete={phase === 'opening' ? handleExpandComplete : phase === 'closing' ? handleShrinkComplete : undefined}
             style={{
               position: 'fixed',
               zIndex: 300,
-              background: 'transparent',
-              border: 'none',
-              backdropFilter: 'none',
               padding: 0,
             }}
           >
-            <GlassWrap
-              borderRadius={20}
-              maxDpr={glassBudget.maxDpr}
-              filterResolution={glassBudget.filterResolution}
+            <div
+              className="morph-inner"
               style={{
-                background: phase === 'open' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.06)',
-                border: phase === 'open' ? '1px solid rgba(0, 229, 255, 0.4)' : '0.5px solid rgba(255, 255, 255, 0.18)',
+                background: phase === 'open' ? 'rgba(20, 24, 32, 0.95)' : 'rgba(20, 24, 32, 0.92)',
+                border: phase === 'open' ? '1px solid rgba(0, 229, 255, 0.4)' : '1px solid rgba(0, 0, 0, 0.08)',
                 width: '100%',
                 height: '100%',
                 padding: phase === 'open' ? '40px' : '15px 20px',
@@ -141,7 +133,9 @@ export function MorphCard({ tool, sourceRect, phase, onClose, onPhaseChange }: P
                 position: 'relative',
                 overflow: 'hidden',
                 gap: phase === 'open' ? 0 : 8,
-                boxShadow: phase === 'open' ? '0 20px 60px rgba(0, 229, 255, 0.15)' : '0 25px 50px rgba(0, 0, 0, 0.4)',
+                color: 'var(--text-color, #fff)',
+                borderRadius: 20,
+                boxShadow: phase === 'open' ? '0 20px 60px rgba(0, 229, 255, 0.15)' : '0 25px 50px rgba(0, 0, 0, 0.35)',
               }}
             >
               {phase === 'open' ? (
@@ -185,8 +179,8 @@ export function MorphCard({ tool, sourceRect, phase, onClose, onPhaseChange }: P
                       width: 32,
                       height: 32,
                       border: 'none',
-                      background: 'rgba(255,255,255,0.1)',
-                      color: 'var(--text-muted)',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      color: 'var(--text-color, #fff)',
                       fontSize: '1.3rem',
                       borderRadius: '50%',
                       cursor: 'pointer',
@@ -210,7 +204,7 @@ export function MorphCard({ tool, sourceRect, phase, onClose, onPhaseChange }: P
                   )}
                 </>
               )}
-            </GlassWrap>
+            </div>
           </motion.div>
         </>
       )}

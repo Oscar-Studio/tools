@@ -1,13 +1,75 @@
 {
   "tools": [
     {
+      "id": "codec",
+      "name": "编解码器",
+      "description": "Base64 / URL / Hex / Unicode / HTML / ROT13 / Punycode 编码解码；MD5 / SHA-1/256/384/512 哈希；HMAC-SHA256/512；JWT 解析。全部本地运行，不上传数据。",
+      "tags": [
+        "工具",
+        "编码",
+        "哈希",
+        "安全"
+      ],
+      "icon": "🔐",
+      "demoFile": "codec/index.html"
+    },
+    {
+      "id": "whiteboard",
+      "name": "白板",
+      "description": "基于 tldraw 的无限画布：画笔、形状、文本、图片、自动保存；登录后云端同步。",
+      "tags": [
+        "画板",
+        "绘图",
+        "效率"
+      ],
+      "icon": "🎨",
+      "featured": true,
+      "demoFile": "/#/whiteboard"
+    },
+    {
       "id": "markdown-editor",
       "name": "Markdown 编辑器",
       "description": "支持 LaTeX 公式的 Markdown 编辑器，可导出为图片，支持自定义配色",
-      "tags": ["编辑器", "Markdown", "LaTeX"],
+      "tags": [
+        "编辑器",
+        "Markdown",
+        "LaTeX"
+      ],
       "icon": "📝",
       "featured": true,
       "demoFile": "markdown-editor/index.html"
+    },
+    {
+      "id": "todo",
+      "name": "待办清单",
+      "description": "极简待办管理：优先级、截止日期、分组、子任务、标签、Markdown 备注。未登录本地保存，登录后云端同步。",
+      "tags": [
+        "效率",
+        "待办",
+        "GTD"
+      ],
+      "icon": "🍅",
+      "featured": true,
+      "subject": [
+        "通用"
+      ],
+      "demoFile": "todo/index.html"
+    },
+    {
+      "id": "word-counter",
+      "name": "字数统计",
+      "description": "实时统计中文字符、英文单词、段落、行数与阅读时长，支持多文稿和文件导入导出。",
+      "tags": [
+        "写作",
+        "效率",
+        "文本分析"
+      ],
+      "icon": "✍️",
+      "featured": true,
+      "subject": [
+        "通用"
+      ],
+      "demoFile": "legacy-tools/word-counter/index.html"
     }
   ]
 }
