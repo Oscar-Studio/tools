@@ -15,7 +15,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 export type ToolsTheme = 'classic' | 'studio';
 
 const STORAGE_KEY = 'oscar-tools-theme';
-const DEFAULT_TOOLS_THEME: ToolsTheme = 'classic';
+const DEFAULT_TOOLS_THEME: ToolsTheme = 'studio';
 
 const API_BASE_FALLBACK = 'https://api.oscarstudio.cn';
 

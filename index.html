@@ -30,7 +30,7 @@
       (function() {
         try {
           var tt = localStorage.getItem('oscar-tools-theme');
-          if (tt !== 'classic' && tt !== 'studio') tt = 'classic';
+          if (tt !== 'classic' && tt !== 'studio') tt = 'studio';
           document.documentElement.setAttribute('data-tools-theme', tt);
         } catch (e) { /* ignore */ }
       })();
