@@ -9,3 +9,13 @@ dist
 
 # tsbuildinfo 不应该被跟踪（构建产物）
 tsconfig.tsbuildinfo
+
+# TypeScript 增量构建缓存 / 备份文件，不应入库
+*.tsbuildinfo
+*.tsbuildinfo.old
+*.bak
+*~
+
+# 第三方依赖本地构建产物（scripts/copy-*.mjs 会拷到 dist 而非入库）
+.qrcode-build/
+.zxcvbn-ts-build/

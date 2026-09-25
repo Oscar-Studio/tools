@@ -2,12 +2,17 @@
 // 入口：连接所有模块、初始化
 // =====================================================
 
-import { subscribe, replaceState, getState, setTheme } from './store.js';
+import { subscribe, replaceState, getState, setTheme, updateTask } from './store.js';
 import { initRender, render } from './render.js';
 import { initDrag } from './drag.js';
 import { isLoggedIn, onLoginChange, loginRedirect } from './auth.js';
 import { pull, pushNow, onSyncStatus } from './sync.js';
 import { maybePromptImport } from './migrate.js';
+import {
+    initReminder, stopReminder,
+    getNotificationPermission, requestNotificationPermission,
+} from './reminder.js';
+import { loadReminderPrefs, getReminderPrefs } from './settings.js';
 
 // ============ 抓取 DOM ============
 
@@ -16,6 +21,7 @@ const ui = {
     body: document.body,
     searchInput: document.getElementById('searchInput'),
     themeBtn: document.getElementById('themeBtn'),
+    bellBtn: document.getElementById('bellBtn'),
     syncStatus: document.getElementById('syncStatus'),
     groupList: document.getElementById('groupList'),
     newGroupBtn: document.getElementById('newGroupBtn'),
@@ -101,6 +107,30 @@ function flash(msg) {
 
 window.flash = flash;
 
+// ============ 通知铃铛按钮 ============
+
+function updateBellIcon() {
+    if (!ui.bellBtn) return;
+    const cur = getNotificationPermission();
+    ui.bellBtn.classList.remove('bell--granted', 'bell--denied', 'bell--unsupported');
+    if (cur === 'granted') {
+        ui.bellBtn.textContent = '🔔';
+        ui.bellBtn.classList.add('bell--granted');
+        ui.bellBtn.title = '通知已开启';
+    } else if (cur === 'denied') {
+        ui.bellBtn.textContent = '🔕';
+        ui.bellBtn.classList.add('bell--denied');
+        ui.bellBtn.title = '通知被拒绝：在浏览器站点设置中开启';
+    } else if (cur === 'unsupported') {
+        ui.bellBtn.textContent = '🔕';
+        ui.bellBtn.classList.add('bell--unsupported');
+        ui.bellBtn.title = '当前浏览器不支持通知';
+    } else {
+        ui.bellBtn.textContent = '🔕';
+        ui.bellBtn.title = '点击开启浏览器通知';
+    }
+}
+
 // ============ 初始化 ============
 
 function init() {
@@ -116,6 +146,31 @@ function init() {
         const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
         applyTheme(next);
         setTheme(next);
+    });
+
+    // 通知权限铃铛按钮
+    updateBellIcon();
+    ui.bellBtn.addEventListener('click', async () => {
+        const cur = getNotificationPermission();
+        if (cur === 'granted') {
+            flash('通知已开启 ✓');
+            return;
+        }
+        if (cur === 'denied') {
+            flash('浏览器已拒绝通知，请在站点设置中开启');
+            return;
+        }
+        if (cur === 'unsupported') {
+            flash('当前浏览器不支持通知');
+            return;
+        }
+        const result = await requestNotificationPermission();
+        updateBellIcon();
+        if (result === 'granted') {
+            flash('通知已开启 ✓');
+        } else {
+            flash('通知未开启，提醒功能将不可用');
+        }
     });
 
     // 点击右上角同步徽标：未登录则跳登录；登录中点击强制拉取
@@ -201,6 +256,17 @@ function init() {
     // 任务删除动画结束时由 render.js 派发的事件：自动隐藏已被删除的节点
     window.addEventListener('todo:flash', (e) => {
         // 目前 flash 已显示 toast，无需额外动作
+    });
+
+    // 启动提醒服务：先拉 ui_config 里的默认值，再起定时器
+    loadReminderPrefs().finally(() => {
+        initReminder({
+            getState,
+            getPrefs: getReminderPrefs,
+            markNotified: (taskId, ts) => {
+                try { updateTask(taskId, { notifiedAt: ts }); } catch (e) { console.warn(e); }
+            },
+        });
     });
 }
 

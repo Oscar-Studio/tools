@@ -194,6 +194,20 @@ body[data-theme="dark"] {
     transform: scale(0.94);
 }
 
+.bell-btn {
+    font-size: 14px;
+}
+
+.bell-btn.bell--granted {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.bell-btn.bell--denied,
+.bell-btn.bell--unsupported {
+    opacity: 0.55;
+}
+
 .sync-pill {
     display: inline-flex;
     align-items: center;
@@ -635,6 +649,7 @@ body[data-theme="dark"] {
 .meta-chip.due { font-variant-numeric: tabular-nums; }
 .meta-chip.due.is-overdue { color: var(--p3); border-color: rgba(231, 76, 60, 0.3); background: rgba(231, 76, 60, 0.08); }
 .meta-chip.due.is-today { color: var(--p2); border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.08); }
+.meta-chip.notified { background: rgba(91, 141, 239, 0.12); border-color: transparent; }
 
 .priority-dot {
     width: 8px;
@@ -884,6 +899,65 @@ body[data-theme="dark"] {
 .detail-row input:focus {
     background: var(--bg);
     box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.due-fields {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.detail-time {
+    border: none;
+    outline: none;
+    background: var(--surface);
+    border-radius: var(--r-sm);
+    padding: 5px 10px;
+    color: var(--text);
+    font: inherit;
+    width: 110px;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.detail-time:focus {
+    background: var(--bg);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.detail-time.is-auto {
+    border: 1px dashed var(--p2);
+    background: rgba(245, 158, 11, 0.08);
+    color: var(--p2);
+}
+
+.due-offset-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.detail-offset {
+    border: none;
+    outline: none;
+    background: var(--surface);
+    border-radius: var(--r-sm);
+    padding: 5px 8px;
+    color: var(--text);
+    font: inherit;
+    width: 64px;
+}
+
+.detail-offset:focus {
+    background: var(--bg);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.due-offset-suffix {
+    white-space: nowrap;
 }
 
 .priority-picker {

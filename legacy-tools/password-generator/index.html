@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="view-transition" content="same-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="强密码 + 助记密码（Diceware）+ zxcvbn 强度评估 + 批量生成 + 历史记录。全部本地计算，不上传数据。">
+  <title>密码生成器 · Oscar Studio</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "@zxcvbn-ts/core": "/vendor/zxcvbn-ts/core/index.js",
+      "@zxcvbn-ts/language-common": "/vendor/zxcvbn-ts/language-common/index.js",
+      "@zxcvbn-ts/language-en": "/vendor/zxcvbn-ts/language-en/index.js",
+      "fastest-levenshtein": "/vendor/levenshtein/mod.js",
+      "@zxcvbn-ts/dictionary-compression/decompress": "/vendor/dictionary-compression/decompress.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="back-link" href="/" aria-label="返回工具首页">
+      <span aria-hidden="true">←</span>
+      <span>工具集</span>
+    </a>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">🔑</span>
+      <span>密码生成器</span>
+      <span class="beta">PASSWORD LAB</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-button" id="clearClipboardBtn" type="button" aria-label="立即清除剪贴板" title="立即清除剪贴板">⌫</button>
+      <button class="icon-button" id="themeBtn" type="button" aria-label="切换主题" title="切换主题">☼</button>
+    </div>
+  </header>
+
+  <main class="app-shell" style="view-transition-name: vt-tool-password">
+    <section class="intro-row">
+      <div>
+        <p class="eyebrow">EVERYTHING STAYS LOCAL</p>
+        <h1>给每一扇门，<em>配一把好锁。</em></h1>
+        <p class="intro-copy">强密码、Diceware 助记密码、zxcvbn 强度评估、批量生成、历史记录 — 全部在你的浏览器里完成。你的密码永远不离开设备。</p>
+      </div>
+      <div class="privacy-note">
+        <span class="privacy-dot"></span>
+        <span>纯本地运行<br><small>密码与历史只在浏览器中</small></span>
+      </div>
+    </section>
+
+    <nav class="tabs" role="tablist" aria-label="功能切换">
+      <button class="tab is-active" data-tab="strong" role="tab" aria-selected="true">强密码</button>
+      <button class="tab" data-tab="passphrase" role="tab" aria-selected="false">助记密码</button>
+      <button class="tab" data-tab="strength" role="tab" aria-selected="false">强度评估</button>
+      <button class="tab" data-tab="batch" role="tab" aria-selected="false">批量生成</button>
+      <button class="tab" data-tab="history" role="tab" aria-selected="false">历史记录</button>
+    </nav>
+
+    <!-- ===================== 强密码 ===================== -->
+    <section class="tab-panel is-active" id="panel-strong" role="tabpanel" aria-labelledby="tab-strong">
+      <div class="surface card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label">STRONG PASSWORD</span>
+            <h2>生成参数</h2>
+          </div>
+          <div class="surface-actions">
+            <button class="text-button" id="strongSaveBtn" type="button">保存到历史</button>
+            <button class="text-button" id="strongRegenBtn" type="button">重新生成</button>
+            <button class="copy-btn" id="strongCopyBtn" type="button">复制</button>
+          </div>
+        </div>
+        <output id="strongOutput" class="big-output" data-empty-text="调整下方参数后点击"重新生成"" spellcheck="false"></output>
+        <div class="form-grid">
+          <label class="slider-label">
+            长度 <span class="slider-value"><span id="strongLengthValue">16</span> 字符</span>
+            <input type="range" id="strongLengthRange" min="4" max="64" value="16">
+          </label>
+          <label class="check"><input type="checkbox" id="strongOptUpper" checked> 大写 A–Z</label>
+          <label class="check"><input type="checkbox" id="strongOptLower" checked> 小写 a–z</label>
+          <label class="check"><input type="checkbox" id="strongOptDigits" checked> 数字 0–9</label>
+          <label class="check"><input type="checkbox" id="strongOptSymbols"> 符号 !@#…</label>
+          <label class="check"><input type="checkbox" id="strongOptExclude" checked> 排除易混淆 0/O/1/l/I</label>
+        </div>
+        <div class="error-tip" id="strongError" hidden></div>
+      </div>
+      <article class="strength-card card" id="strongStrengthCard">
+        <header>
+          <h3>强度评估</h3>
+          <span class="strength-label" id="strongStrengthLabel">—</span>
+        </header>
+        <div class="strength-bar" id="strongStrengthBar" aria-label="强度条">
+          <span class="strength-seg"></span><span class="strength-seg"></span><span class="strength-seg"></span><span class="strength-seg"></span><span class="strength-seg"></span>
+        </div>
+        <div class="strength-meta">
+          <span>评分 <strong id="strongStrengthScore">—</strong>/4</span>
+          <span>估算熵 <strong id="strongStrengthEntropy">—</strong> bit</span>
+          <span>字符集熵 <strong id="strongCharsetEntropy">—</strong> bit</span>
+          <span>破解时间 <strong id="strongStrengthCrack">—</strong></span>
+        </div>
+        <ul class="strength-feedback" id="strongStrengthFeedback"></ul>
+      </article>
+    </section>
+
+    <!-- ===================== 助记密码 ===================== -->
+    <section class="tab-panel" id="panel-passphrase" role="tabpanel" aria-labelledby="tab-passphrase" hidden>
+      <div class="surface card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label">DICEWARE PASSPHRASE</span>
+            <h2>助记密码参数</h2>
+          </div>
+          <div class="surface-actions">
+            <button class="text-button" id="passSaveBtn" type="button">保存到历史</button>
+            <button class="text-button" id="passRegenBtn" type="button">重新生成</button>
+            <button class="copy-btn" id="passCopyBtn" type="button">复制</button>
+          </div>
+        </div>
+        <output id="passOutput" class="big-output" data-empty-text="点击"重新生成"开始" spellcheck="false"></output>
+        <div class="form-grid">
+          <label class="slider-label">
+            词数 <span class="slider-value"><span id="passCountValue">5</span> 个词</span>
+            <input type="range" id="passCountRange" min="3" max="10" value="5">
+          </label>
+          <label class="check">语言
+            <select id="passLang">
+              <option value="en" selected>英文（EFF 完整 7776 词）</option>
+              <option value="zh">中文（双字常用 1500 词）</option>
+            </select>
+          </label>
+          <label class="check">分隔符
+            <select id="passSeparator">
+              <option value=" " selected>空格</option>
+              <option value="-">短横 -</option>
+              <option value=".">点 .</option>
+              <option value="">无</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="passCapitalize" checked> 首字母大写</label>
+          <label class="check"><input type="checkbox" id="passIncludeNumber"> 末尾加 1 个数字</label>
+          <label class="check"><input type="checkbox" id="passIncludeSymbol"> 末尾加 1 个符号</label>
+        </div>
+      </div>
+      <article class="strength-card card" id="passStrengthCard">
+        <header>
+          <h3>强度评估</h3>
+          <span class="strength-label" id="passStrengthLabel">—</span>
+        </header>
+        <div class="strength-bar" id="passStrengthBar">
+          <span class="strength-seg"></span><span class="strength-seg"></span><span class="strength-seg"></span><span class="strength-seg"></span><span class="strength-seg"></span>
+        </div>
+        <div class="strength-meta">
+          <span>评分 <strong id="passStrengthScore">—</strong>/4</span>
+          <span>估算熵 <strong id="passStrengthEntropy">—</strong> bit</span>
+          <span>词表熵 <strong id="passDictEntropy">—</strong> bit</span>
+          <span>破解时间 <strong id="passStrengthCrack">—</strong></span>
+        </div>
+        <ul class="strength-feedback" id="passStrengthFeedback"></ul>
+      </article>
+    </section>
+
+    <!-- ===================== 强度评估 ===================== -->
+    <section class="tab-panel" id="panel-strength" role="tabpanel" aria-labelledby="tab-strength" hidden>
+      <div class="surface card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label">STRENGTH CHECK</span>
+            <h2>输入待评估的密码</h2>
+          </div>
+          <div class="surface-actions">
+            <button class="text-button" id="strSampleBtn" type="button">填入示例</button>
+            <button class="text-button" id="strClearBtn" type="button">清空</button>
+          </div>
+        </div>
+        <input id="strInput" type="text" class="text-input pwd-input" placeholder="输入任意密码，实时评估强度" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </div>
+      <article class="strength-card card" id="strStrengthCard">
+        <header>
+          <h3>评估结果</h3>
+          <span class="strength-label" id="strStrengthLabel">—</span>
+        </header>
+        <div class="strength-bar" id="strStrengthBar">
+          <span class="strength-seg"></span><span class="strength-seg"></span><span class="strength-seg"></span><span class="strength-seg"></span><span class="strength-seg"></span>
+        </div>
+        <div class="strength-meta">
+          <span>评分 <strong id="strStrengthScore">—</strong>/4</span>
+          <span>估算熵 <strong id="strStrengthEntropy">—</strong> bit</span>
+          <span>猜测次数 <strong id="strStrengthGuesses">—</strong></span>
+          <span>破解时间 <strong id="strStrengthCrack">—</strong></span>
+        </div>
+        <ul class="strength-feedback" id="strStrengthFeedback"></ul>
+      </article>
+    </section>
+
+    <!-- ===================== 批量生成 ===================== -->
+    <section class="tab-panel" id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" hidden>
+      <div class="surface card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label">BATCH</span>
+            <h2>批量参数</h2>
+          </div>
+          <div class="surface-actions">
+            <label class="check">类型
+              <select id="batchType">
+                <option value="strong" selected>强密码</option>
+                <option value="passphrase">助记密码</option>
+              </select>
+            </label>
+            <label class="check">数量
+              <input type="number" id="batchCount" min="1" max="200" value="10" style="width:64px">
+            </label>
+            <button class="text-button" id="batchGenBtn" type="button">生成</button>
+            <button class="text-button" id="batchCopyAllBtn" type="button">全部复制</button>
+            <label class="check">导出
+              <select id="batchExportFmt">
+                <option value="">不导出</option>
+                <option value="txt">TXT</option>
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="batch-summary" id="batchSummary" hidden></div>
+        <div class="batch-table-wrap">
+          <table class="batch-table" id="batchTable" hidden>
+            <thead>
+              <tr><th>#</th><th>密码</th><th>评分</th><th>熵(bit)</th><th>操作</th></tr>
+            </thead>
+            <tbody id="batchTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 历史记录 ===================== -->
+    <section class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history" hidden>
+      <div class="surface card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label">HISTORY</span>
+            <h2>生成历史</h2>
+          </div>
+          <div class="surface-actions">
+            <button class="text-button" id="histClearBtn" type="button">清空全部</button>
+            <button class="text-button" id="histExportBtn" type="button">导出 JSON</button>
+            <label class="text-button" id="histImportLabel">
+              导入 JSON
+              <input type="file" id="histImportInput" accept="application/json,.json" hidden>
+            </label>
+          </div>
+        </div>
+        <div class="history-meta" id="historyMeta"></div>
+        <ul class="history-list" id="historyList"></ul>
+        <div class="history-empty" id="historyEmpty">
+          <p>暂无历史记录。生成一个密码后，点击"保存到历史"即可看到。</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

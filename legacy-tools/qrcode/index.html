@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="view-transition" content="same-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5">
+  <meta name="theme-color" content="#010409">
+  <meta name="description" content="二维码生成器：实时输入文本生成可自定义的 QR 码，支持颜色、形状、渐变、中心 Logo 嵌入，导出 PNG / SVG。全部本地运行，不上传数据。">
+  <title>二维码生成器 · Oscar Studio</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="./styles.css">
+  <script>
+    // 渲染前应用主题，避免闪烁（与 codec 一致）
+    (function() {
+      try {
+        var t = localStorage.getItem('oscar-theme');
+        var resolved;
+        if (t === 'light' || t === 'dark') {
+          resolved = t;
+        } else {
+          resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', resolved);
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="back-link" href="/" aria-label="返回工具首页">
+      <span aria-hidden="true">←</span>
+      <span>工具集</span>
+    </a>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">📱</span>
+      <span>二维码生成器</span>
+      <span class="beta">QR LAB</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-button" id="themeBtn" type="button" aria-label="切换主题" title="切换主题">☼</button>
+    </div>
+  </header>
+
+  <main class="app-shell" style="view-transition-name: vt-tool-qrcode">
+    <section class="intro-row">
+      <div>
+        <p class="eyebrow">EVERYTHING STAYS LOCAL</p>
+        <h1>把每个字符，<em>编成方格。</em></h1>
+        <p class="intro-copy">实时输入文本 → 生成可定制的二维码。支持前景色、形状、渐变、中心 Logo，导出 PNG / SVG。全部本地完成，文本与 Logo 都不会上传。</p>
+      </div>
+      <div class="privacy-note">
+        <span class="privacy-dot"></span>
+        <span>纯本地生成<br><small>文本与图片不上传</small></span>
+      </div>
+    </section>
+
+    <div class="layout">
+      <!-- ============ 左侧：输入 + 选项 ============ -->
+      <section class="panel panel-input card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label">TEXT</span>
+            <h2>输入文本</h2>
+          </div>
+          <div class="surface-actions">
+            <button class="text-button" id="sampleBtn" type="button">填入示例</button>
+            <button class="text-button" id="clearBtn" type="button">清空</button>
+          </div>
+        </div>
+        <textarea id="textInput" class="big-input" spellcheck="false" placeholder="输入文本、URL、邮箱、电话…"></textarea>
+
+        <div class="options">
+          <!-- 容错级别 -->
+          <div class="option-row">
+            <label class="option-label">
+              <span class="opt-icon">⚙</span>
+              <span>容错级别</span>
+            </label>
+            <div class="seg-control" role="radiogroup" aria-label="容错级别">
+              <button class="seg" data-ecl="L" type="button" role="radio" aria-checked="false">L · 7%</button>
+              <button class="seg is-active" data-ecl="M" type="button" role="radio" aria-checked="true">M · 15%</button>
+              <button class="seg" data-ecl="Q" type="button" role="radio" aria-checked="false">Q · 25%</button>
+              <button class="seg" data-ecl="H" type="button" role="radio" aria-checked="false">H · 30%</button>
+            </div>
+            <p class="option-hint" id="eclHint">默认 M；上传 Logo 后自动提升到 H（最高 30%）</p>
+          </div>
+
+          <!-- 颜色 -->
+          <div class="option-row">
+            <label class="option-label">
+              <span class="opt-icon">🎨</span>
+              <span>颜色</span>
+            </label>
+            <div class="color-row">
+              <label class="color-pick">
+                <span class="color-cap">前景</span>
+                <input type="color" id="fgColor" value="#101418">
+                <span class="color-hex" id="fgHex">#101418</span>
+              </label>
+              <label class="color-pick">
+                <span class="color-cap">背景</span>
+                <input type="color" id="bgColor" value="#ffffff">
+                <span class="color-hex" id="bgHex">#ffffff</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 形状 -->
+          <div class="option-row">
+            <label class="option-label">
+              <span class="opt-icon">▢</span>
+              <span>形状</span>
+            </label>
+            <div class="seg-control" role="radiogroup" aria-label="形状">
+              <button class="seg is-active" data-shape="square" type="button" role="radio" aria-checked="true">方点</button>
+              <button class="seg" data-shape="dot" type="button" role="radio" aria-checked="false">圆点</button>
+            </div>
+          </div>
+
+          <!-- 渐变 -->
+          <div class="option-row">
+            <label class="option-label">
+              <span class="opt-icon">🌈</span>
+              <span>渐变</span>
+              <label class="switch">
+                <input type="checkbox" id="gradEnabled">
+                <span class="switch-track" aria-hidden="true"></span>
+              </label>
+            </label>
+            <div class="grad-body" id="gradBody" hidden>
+              <label class="color-pick">
+                <span class="color-cap">第二色</span>
+                <input type="color" id="gradColor" value="#3a3f4b">
+                <span class="color-hex" id="gradHex">#3a3f4b</span>
+              </label>
+              <div class="dir-row">
+                <span class="opt-sub">方向</span>
+                <div class="seg-control seg-sm" role="radiogroup" aria-label="渐变方向">
+                  <button class="seg" data-dir="0" type="button" title="水平 →">→</button>
+                  <button class="seg is-active" data-dir="45" type="button" title="对角 ↘">↘</button>
+                  <button class="seg" data-dir="90" type="button" title="垂直 ↓">↓</button>
+                  <button class="seg" data-dir="135" type="button" title="对角 ↙">↙</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 尺寸 -->
+          <div class="option-row">
+            <label class="option-label" for="sizeSlider">
+              <span class="opt-icon">📏</span>
+              <span>导出尺寸</span>
+              <span class="opt-value" id="sizeVal">512 px</span>
+            </label>
+            <input type="range" id="sizeSlider" class="slider" min="128" max="1024" step="32" value="512">
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 右侧：预览 + 下载 + Logo ============ -->
+      <section class="panel panel-preview card">
+        <div class="preview-frame">
+          <canvas id="qrCanvas" class="qr-canvas" width="280" height="280" aria-label="二维码预览"></canvas>
+        </div>
+
+        <div class="download-row">
+          <button class="dl-btn" id="dlPng" type="button">
+            <span aria-hidden="true">⬇</span>
+            <span>PNG</span>
+          </button>
+          <button class="dl-btn dl-btn-secondary" id="dlSvg" type="button">
+            <span aria-hidden="true">⬇</span>
+            <span>SVG</span>
+          </button>
+        </div>
+
+        <div class="logo-zone">
+          <label class="logo-drop" id="logoDrop" for="logoInput" tabindex="0">
+            <input type="file" id="logoInput" accept="image/png,image/jpeg,image/svg+xml" hidden>
+            <div class="logo-empty" id="logoEmpty">
+              <span class="logo-icon" aria-hidden="true">📁</span>
+              <span class="logo-text">点击或拖拽上传 Logo</span>
+              <span class="logo-hint">PNG / JPG / SVG — 自动加白底圆角</span>
+            </div>
+            <img class="logo-preview" id="logoPreview" alt="" hidden>
+          </label>
+          <button class="text-button" id="logoClear" type="button" hidden>移除 Logo</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

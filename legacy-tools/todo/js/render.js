@@ -16,6 +16,7 @@ import {
 } from './store.js';
 import { renderMarkdown } from './markdown.js';
 import { showConfirm, showPrompt } from './modal.js';
+import { parseDateExpression } from './datetime.js';
 
 const GROUP_COLORS = ['#5b8def', '#22c55e', '#f59e0b', '#e74c3c', '#a855f7', '#06b6d4', '#ec4899', '#84cc16'];
 
@@ -139,7 +140,7 @@ function bindGlobalEvents() {
         e.preventDefault();
         const raw = ui.quickAddInput.value;
         if (!raw.trim()) return;
-        const { title, priority, tags } = parseQuickAddInput(raw);
+        const { title, priority, tags, dueDate, dueTime } = parseQuickAddInput(raw);
         if (!title) {
             flash('请输入任务标题');
             return;
@@ -147,7 +148,7 @@ function bindGlobalEvents() {
         const groupId = resolveTargetGroupId();
         if (!groupId) return;
         ui.quickAddInput.value = '';
-        openNewDraft({ groupId, title, priority, tags });
+        openNewDraft({ groupId, title, priority, tags, dueDate, dueTime });
     });
 
     // 关闭详情：直接丢弃草稿
@@ -173,9 +174,9 @@ function bindGlobalEvents() {
     });
 }
 
-// 解析快速添加输入：优先级 + #标签
+// 解析快速添加输入：优先级 + #标签 + 日期 + 时间
 // 优先级标记（!! = 高 / ! = 中）允许出现在标题首或尾；
-// #标签 出现在任意位置都会被提取。
+// #标签 与日期/时间片段出现在任意位置都会被提取并从标题移除。
 function parseQuickAddInput(raw) {
     let text = raw.trim();
     let priority = 0;
@@ -186,6 +187,19 @@ function parseQuickAddInput(raw) {
         tags.push(tag);
         return '';
     });
+
+    // 提取日期 + 时间片段
+    const dateResult = parseDateExpression(text);
+    let dueDate = null;
+    let dueTime = null;
+    if (dateResult.matched) {
+        dueDate = dateResult.date;
+        text = dateResult.remaining;
+    }
+    if (dateResult.time) {
+        dueTime = dateResult.time;
+        text = dateResult.remaining;
+    }
 
     // 起始前缀
     const mStart = text.match(/^(!!|!)\s+(.+)$/);
@@ -202,12 +216,15 @@ function parseQuickAddInput(raw) {
     }
 
     text = text.trim();
-    return { title: text, priority, tags };
+    return { title: text, priority, tags, dueDate, dueTime };
 }
 
 // ============ 草稿生命周期 ============
 
-function openNewDraft({ groupId, title = '', priority = 0, tags = [] }) {
+function openNewDraft({ groupId, title = '', priority = 0, tags = [], dueDate = null, dueTime = null }) {
+    // 优先级：用户在快速添加里识别出的日期 > 「今日」分组的默认今天 > 留空
+    let finalDueDate = dueDate;
+    if (!finalDueDate && isGroupToday(groupId)) finalDueDate = todayISO();
     view.draft = {
         id: uid('t'),
         groupId,
@@ -215,8 +232,12 @@ function openNewDraft({ groupId, title = '', priority = 0, tags = [] }) {
         done: false,
         priority,
         tags,
-        // 关键改动：今日分组新建任务时自动设 DDL = 今天
-        dueDate: isGroupToday(groupId) ? todayISO() : null,
+        dueDate: finalDueDate,
+        dueTime: dueTime || null,
+        reminderOffset: null,
+        notifiedAt: null,
+        // 标记是否由解析器自动填入（影响 due 输入框高亮）
+        _dueAutoSet: !!(dueDate || dueTime),
         notes: '',
         subtasks: [],
         order: getState().tasks.filter((t) => t.groupId === groupId).length,
@@ -442,7 +463,10 @@ function renderTaskItem(task, group) {
 
     const meta = el('div', { class: 'task-meta' });
     if (task.dueDate) {
-        meta.appendChild(el('span', { class: `meta-chip due ${dueClass(task.dueDate)}` }, `📅 ${fmtDate(task.dueDate)}`));
+        meta.appendChild(el('span', { class: `meta-chip due ${dueClass(task.dueDate)}` }, `📅 ${fmtDate(task.dueDate)}${task.dueTime ? ' ' + task.dueTime : ''}`));
+    }
+    if (task.notifiedAt) {
+        meta.appendChild(el('span', { class: 'meta-chip notified', title: '已提醒' }, '🔔'));
     }
     (task.tags || []).slice(0, 3).forEach((tag) => {
         meta.appendChild(el('span', { class: 'meta-chip tag' }, `#${tag}`));
@@ -552,13 +576,45 @@ function renderDetail() {
         dataset: { focusKey: 'due' },
         oninput: (e) => { view.draft.dueDate = e.target.value || null; },
     });
-    if (isNew && isGroupToday(task.groupId)) {
-        // 今日分组新建任务时，DDL 已被 openNewDraft 自动预填为今天；高亮一下
+    if (isNew && (task._dueAutoSet || isGroupToday(task.groupId))) {
+        // 自动预填日期（快速添加识别 / 今日分组默认）时高亮一下
         dueInput.classList.add('is-auto');
     }
+    // 时间点（HH:MM）
+    const timeInput = el('input', {
+        type: 'time',
+        class: 'detail-time',
+        value: task.dueTime || '',
+        placeholder: '时间',
+        dataset: { focusKey: 'time' },
+        oninput: (e) => { view.draft.dueTime = e.target.value || null; },
+    });
+    if (isNew && task.dueTime) timeInput.classList.add('is-auto');
+    // 提前提醒分钟数（空 = 用全局默认）
+    const offsetInput = el('input', {
+        type: 'number',
+        class: 'detail-offset',
+        value: task.reminderOffset == null ? '' : String(task.reminderOffset),
+        placeholder: '默认',
+        min: '0',
+        max: '1440',
+        step: '5',
+        dataset: { focusKey: 'offset' },
+        oninput: (e) => {
+            const v = e.target.value.trim();
+            view.draft.reminderOffset = v === '' ? null : Math.max(0, Math.min(1440, Math.round(+v) || 0));
+        },
+    });
     const dueRow = el('div', { class: 'detail-row' },
         el('label', {}, '截止'),
-        dueInput,
+        el('div', { class: 'due-fields' },
+            dueInput,
+            timeInput,
+            el('span', { class: 'due-offset-wrap' },
+                offsetInput,
+                el('span', { class: 'due-offset-suffix' }, '分钟前'),
+            ),
+        ),
     );
     ui.detailBody.appendChild(dueRow);
 

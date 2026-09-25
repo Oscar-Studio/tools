@@ -48,10 +48,10 @@ export function MorphCard({ tool, sourceRect, phase, onClose, onPhaseChange }: P
     return () => clearTimeout(t);
   }, [phase, onPhaseChange]);
 
-  const targetW = Math.min(450, viewport.w * 0.9);
-  const targetH = 340;
-  const targetX = (viewport.w - targetW) / 2;
-  const targetY = (viewport.h - targetH) / 2;
+  const targetW = viewport.w;
+  const targetH = viewport.h;
+  const targetX = 0;
+  const targetY = 0;
 
   const initialX = sourceRect ? sourceRect.left : targetX;
   const initialY = sourceRect ? sourceRect.top : targetY;

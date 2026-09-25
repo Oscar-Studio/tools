@@ -2,11 +2,13 @@
 // 响应式状态：subscribe / patch / 不可变更新
 // 数据模型：
 //   {
-//     version: 1,
+//     version: 2,
 //     updatedAt: number,
 //     theme: 'light' | 'dark',
 //     groups: [{ id, name, color, collapsed, order }],
-//     tasks: [{ id, groupId, title, done, priority, tags, dueDate, notes, subtasks, order, createdAt }]
+//     tasks: [{ id, groupId, title, done, priority, tags,
+//              dueDate, dueTime, reminderOffset, notifiedAt,
+//              notes, subtasks, order, createdAt }]
 //   }
 // =====================================================
 
@@ -14,7 +16,20 @@ import { loadLocal, saveLocal } from './storage.js';
 import { pushDebounced } from './sync.js';
 import { isLoggedIn } from './auth.js';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
+
+// v1 → v2：为旧任务补齐新增字段
+function migrateToV2(state) {
+    if (!state || !Array.isArray(state.tasks)) return state;
+    state.tasks = state.tasks.map((t) => ({
+        dueTime: null,
+        reminderOffset: null,
+        notifiedAt: null,
+        ...t,
+    }));
+    state.version = 2;
+    return state;
+}
 
 function uid(prefix) {
     return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -45,8 +60,16 @@ export function defaultGroups() {
 
 const listeners = new Set();
 let state = (() => {
-    const local = loadLocal();
+    let local = loadLocal();
     if (local && local.version === SCHEMA_VERSION) return local;
+    if (local && typeof local.version === 'number' && local.version < SCHEMA_VERSION) {
+        // 旧版本数据迁移
+        for (let v = local.version; v < SCHEMA_VERSION; v++) {
+            if (v === 1) local = migrateToV2(local);
+        }
+        saveLocal(local);
+        return local;
+    }
     // 首次进入：注入默认分组
     const init = emptyState();
     init.groups = defaultGroups();
@@ -110,7 +133,8 @@ export function deleteGroup(groupId) {
 }
 
 // 添加任务。接受完整 draft，仅覆盖服务端控制的字段（id / order / createdAt），
-// 其余字段（title / groupId / priority / dueDate / tags / notes / subtasks / done）直接来自草稿。
+// 其余字段（title / groupId / priority / dueDate / dueTime / reminderOffset / notifiedAt
+//              / tags / notes / subtasks / done）直接来自草稿。
 export function addTask(draft) {
     // 拒绝空 / 纯空白标题：避免 UI 上出现空任务
     const trimmedTitle = (draft && draft.title ? String(draft.title) : '').trim();
@@ -132,6 +156,9 @@ export function addTask(draft) {
             tags: draft.tags || [],
             subtasks: draft.subtasks || [],
             notes: draft.notes || '',
+            dueTime: draft.dueTime ?? null,
+            reminderOffset: draft.reminderOffset ?? null,
+            notifiedAt: draft.notifiedAt ?? null,
             order,
             createdAt: Date.now(),
         };

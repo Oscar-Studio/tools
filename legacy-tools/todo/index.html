@@ -27,6 +27,7 @@
         </div>
         <div class="topbar-right">
             <button id="themeBtn" class="icon-btn" title="切换主题" aria-label="切换主题">🌗</button>
+            <button id="bellBtn" class="icon-btn bell-btn" title="开启浏览器通知" aria-label="通知权限">🔕</button>
             <div id="syncStatus" class="sync-pill sync-pill--local" title="本地存储">
                 <span class="sync-dot"></span><span class="sync-label">本地</span>
             </div>
@@ -57,7 +58,7 @@
             <ul id="taskList" class="task-list" role="list"></ul>
             <form id="quickAddForm" class="quick-add" autocomplete="off">
                 <span class="quick-add-icon">＋</span>
-                <input id="quickAddInput" type="text" placeholder="输入任务后回车，回车 + 优先级前缀：!! 高 / ! 中">
+                <input id="quickAddInput" type="text" placeholder="输入任务后回车；支持：明天下午3点 开会 / 一分钟后 喝水 / !! 高优先级 / #标签">
                 <button type="submit" class="primary-btn" hidden>添加</button>
             </form>
         </section>
@@ -90,6 +91,6 @@
     <!-- 轻提示 -->
     <div id="toast" class="toast" hidden></div>
 
-    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="./js/app.js?v=2026-09-05b"></script>
 </body>
 </html>

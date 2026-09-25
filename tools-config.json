@@ -14,6 +14,19 @@
       "demoFile": "codec/index.html"
     },
     {
+      "id": "password-generator",
+      "name": "密码生成器",
+      "description": "强密码 + 助记密码（Diceware）+ zxcvbn 强度评估 + 批量生成 + 历史记录。全部本地计算，不上传数据。",
+      "tags": [
+        "工具",
+        "密码",
+        "安全"
+      ],
+      "icon": "🔑",
+      "featured": true,
+      "demoFile": "password-generator/index.html"
+    },
+    {
       "id": "whiteboard",
       "name": "白板",
       "description": "基于 tldraw 的无限画布：画笔、形状、文本、图片、自动保存；登录后云端同步。",
@@ -69,7 +82,19 @@
       "subject": [
         "通用"
       ],
-      "demoFile": "legacy-tools/word-counter/index.html"
+      "demoFile": "word-counter/index.html"
+    },
+    {
+      "id": "qrcode",
+      "name": "二维码生成器",
+      "description": "实时输入文本生成可定制的二维码：颜色、形状、渐变、中心 Logo 嵌入；下载 PNG / SVG。全部本地完成，文本与 Logo 不上传。",
+      "tags": [
+        "工具",
+        "二维码",
+        "图形"
+      ],
+      "icon": "📱",
+      "demoFile": "qrcode/index.html"
     }
   ]
 }
