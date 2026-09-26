@@ -2,7 +2,7 @@
 // 云端同步：debounced PUT + 失败重试 + 状态回调
 // =====================================================
 
-import { getToken } from './auth.js';
+import { getToken } from './auth.js?v=2026-09-26c';
 
 const API_BASE = 'https://api.oscarstudio.cn/api';
 const ENDPOINT = `${API_BASE}/todos`;

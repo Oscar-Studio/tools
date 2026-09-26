@@ -7,17 +7,21 @@
 //   - 详情面板的所有输入都直接改 view.draft，**不**写 state
 //   - 点击「保存」才把 view.draft 提交到 state（addTask 或 updateTask）
 //   - 点击「取消 / ×」丢弃 draft，state 不变
+//
+// ⚠️ 缓存版本：本文件与其它模块之间的 import 必须统一带 ?v=（见 app.js 顶部铁律）。
+//   版本号：2026-09-26c
 // =====================================================
 
 import {
     getState, addTask, updateTask, deleteTask, toggleTask,
     addGroup, renameGroup, deleteGroup,
     uid,
-} from './store.js';
-import { renderMarkdown } from './markdown.js';
-import { showConfirm, showPrompt } from './modal.js';
-import { analyzeQuickAdd } from './quickadd.js';
-import { createDatePicker, createTimePicker, closePopover } from './picker.js';
+} from './store.js?v=2026-09-26c';
+import { renderMarkdown } from './markdown.js?v=2026-09-26c';
+import { showConfirm, showPrompt } from './modal.js?v=2026-09-26c';
+import { analyzeQuickAdd } from './quickadd.js?v=2026-09-26c';
+import { createDatePicker, createTimePicker, closePopover } from './picker.js?v=2026-09-26c';
+
 
 const GROUP_COLORS = ['#5b8def', '#22c55e', '#f59e0b', '#e74c3c', '#a855f7', '#06b6d4', '#ec4899', '#84cc16'];
 
@@ -214,6 +218,11 @@ function paintQuickAddHighlight() {
 
 function initQuickAddHighlight() {
     if (!ui.quickAddHighlightInner) return;
+    // 只有确认镜像层可用，才让 CSS 把输入框文字设为透明改由镜像层显示。
+    // 万一这个元素不存在（缓存里的旧 index.html），文字仍由输入框自己显示。
+    const field = ui.quickAddHighlightInner.closest('.quick-add-field');
+    if (!field) return;
+    field.classList.add('is-hl-ready');
     ui.quickAddInput.addEventListener('input', paintQuickAddHighlight);
     // 输入框横向滚动（值超过可视宽度）时同步镜像层，否则长文本会左右错位
     ui.quickAddInput.addEventListener('scroll', syncHighlightScroll);

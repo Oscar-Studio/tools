@@ -1,18 +1,28 @@
 // =====================================================
 // 入口：连接所有模块、初始化
+//
+// ⚠️ 缓存版本铁律（改任何 js/ 下的文件都要遵守）：
+//   index.html 只给 app.js / styles.css 加了 ?v=，模块之间是相对 import。
+//   浏览器把 `./render.js` 和 `./render.js?v=xxx` 当成**两个不同模块**
+//   （各自独立实例，模块内的变量不共享），所以：
+//     1) 所有模块间 import 必须带同一个 ?v=，不能只给一部分加；
+//        只加一部分会出现两份 render.js，drag.js 拿到的那份 ui 还是空的，
+//        initDrag() 抛错会中断 init()，主题/通知/同步全失效。
+//     2) 部署时把 index.html 与全部 import 的版本号一起改。
+//   当前版本：2026-09-26c
 // =====================================================
 
-import { subscribe, replaceState, getState, setTheme, updateTask } from './store.js';
-import { initRender, render } from './render.js';
-import { initDrag } from './drag.js';
-import { isLoggedIn, onLoginChange, loginRedirect } from './auth.js';
-import { pull, pushNow, onSyncStatus } from './sync.js';
-import { maybePromptImport } from './migrate.js';
+import { subscribe, replaceState, getState, setTheme, updateTask } from './store.js?v=2026-09-26c';
+import { initRender, render } from './render.js?v=2026-09-26c';
+import { initDrag } from './drag.js?v=2026-09-26c';
+import { isLoggedIn, onLoginChange, loginRedirect } from './auth.js?v=2026-09-26c';
+import { pull, pushNow, onSyncStatus } from './sync.js?v=2026-09-26c';
+import { maybePromptImport } from './migrate.js?v=2026-09-26c';
 import {
     initReminder, stopReminder,
     getNotificationPermission, requestNotificationPermission,
-} from './reminder.js';
-import { loadReminderPrefs, getReminderPrefs } from './settings.js';
+} from './reminder.js?v=2026-09-26c';
+import { loadReminderPrefs, getReminderPrefs } from './settings.js?v=2026-09-26c';
 
 // ============ 抓取 DOM ============
 

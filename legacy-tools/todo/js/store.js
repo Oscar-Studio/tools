@@ -12,9 +12,9 @@
 //   }
 // =====================================================
 
-import { loadLocal, saveLocal } from './storage.js';
-import { pushDebounced } from './sync.js';
-import { isLoggedIn } from './auth.js';
+import { loadLocal, saveLocal } from './storage.js?v=2026-09-26c';
+import { pushDebounced } from './sync.js?v=2026-09-26c';
+import { isLoggedIn } from './auth.js?v=2026-09-26c';
 
 const SCHEMA_VERSION = 2;
 

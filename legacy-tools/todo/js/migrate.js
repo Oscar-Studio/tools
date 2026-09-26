@@ -3,10 +3,10 @@
 // 触发时机：登录后、且 localStorage 有数据、且云端无数据
 // =====================================================
 
-import { isLoggedIn } from './auth.js';
-import { loadLocal, clearLocal } from './storage.js';
-import { pull, pushNow } from './sync.js';
-import { getState } from './store.js';
+import { isLoggedIn } from './auth.js?v=2026-09-26c';
+import { loadLocal, clearLocal } from './storage.js?v=2026-09-26c';
+import { pull, pushNow } from './sync.js?v=2026-09-26c';
+import { getState } from './store.js?v=2026-09-26c';
 
 export async function maybePromptImport() {
     if (!isLoggedIn()) return;

@@ -3,8 +3,8 @@
 // 支持：同组内重排、跨分组移动、子任务缩进提示
 // =====================================================
 
-import { getView, getRenderContext } from './render.js';
-import { reorderTasks, moveTaskToGroup, getState } from './store.js';
+import { getView, getRenderContext } from './render.js?v=2026-09-26c';
+import { reorderTasks, moveTaskToGroup, getState } from './store.js?v=2026-09-26c';
 
 const ROW_HEIGHT_FALLBACK = 36;
 const SUBTASK_INDENT = 30;

@@ -4,9 +4,10 @@
 //
 // 关键点：所有中间步骤都用「等长遮罩」而不是删除字符，
 // 这样 parseDateExpression 返回的 span 始终可以直接用于原文定位。
+// ⚠️ datetime.js 本次改过（新增 span 返回值），import 必须带 ?v=，理由见 render.js 顶部。
 // =====================================================
 
-import { parseDateExpression } from './datetime.js';
+import { parseDateExpression } from './datetime.js?v=2026-09-26c';
 
 const TAG_RE = /#([\p{L}\p{N}_\-]+)/gu;
 
