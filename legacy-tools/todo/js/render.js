@@ -16,7 +16,8 @@ import {
 } from './store.js';
 import { renderMarkdown } from './markdown.js';
 import { showConfirm, showPrompt } from './modal.js';
-import { parseDateExpression } from './datetime.js';
+import { analyzeQuickAdd } from './quickadd.js';
+import { createDatePicker, createTimePicker, closePopover } from './picker.js';
 
 const GROUP_COLORS = ['#5b8def', '#22c55e', '#f59e0b', '#e74c3c', '#a855f7', '#06b6d4', '#ec4899', '#84cc16'];
 
@@ -117,6 +118,7 @@ let ui = {};
 export function initRender(deps) {
     ui = deps;
     bindGlobalEvents();
+    initQuickAddHighlight();
     render();
 }
 
@@ -140,7 +142,7 @@ function bindGlobalEvents() {
         e.preventDefault();
         const raw = ui.quickAddInput.value;
         if (!raw.trim()) return;
-        const { title, priority, tags, dueDate, dueTime } = parseQuickAddInput(raw);
+        const { title, priority, tags, dueDate, dueTime } = analyzeQuickAdd(raw);
         if (!title) {
             flash('请输入任务标题');
             return;
@@ -148,6 +150,7 @@ function bindGlobalEvents() {
         const groupId = resolveTargetGroupId();
         if (!groupId) return;
         ui.quickAddInput.value = '';
+        paintQuickAddHighlight();
         openNewDraft({ groupId, title, priority, tags, dueDate, dueTime });
     });
 
@@ -174,49 +177,48 @@ function bindGlobalEvents() {
     });
 }
 
-// 解析快速添加输入：优先级 + #标签 + 日期 + 时间
-// 优先级标记（!! = 高 / ! = 中）允许出现在标题首或尾；
-// #标签 与日期/时间片段出现在任意位置都会被提取并从标题移除。
-function parseQuickAddInput(raw) {
-    let text = raw.trim();
-    let priority = 0;
+// ============ 快速添加：实时高亮 ============
+//
+// <input> 无法给中间某几个字单独上色，所以用一个与输入框完全重叠的镜像层
+// 承载同样的文字，识别到的日期/时间片段包上 <mark>；输入框本身的文字透明，
+// 只留光标。两层字体、行高、内边距必须完全一致，否则会错位。
+// 唯一的坑是 mark 的背景不能靠 padding/margin（会改变字符步进宽度造成错位），
+// 统一用 box-shadow 外扩画圆角底色。
 
-    // 先提取 #标签（在任何 strip 之前）
-    const tags = [];
-    text = text.replace(/#([\p{L}\p{N}_\-]+)/gu, (_m, tag) => {
-        tags.push(tag);
-        return '';
-    });
+function syncHighlightScroll() {
+    const inner = ui.quickAddHighlightInner;
+    if (!inner) return;
+    inner.style.transform = `translateX(${-ui.quickAddInput.scrollLeft}px)`;
+}
 
-    // 提取日期 + 时间片段
-    const dateResult = parseDateExpression(text);
-    let dueDate = null;
-    let dueTime = null;
-    if (dateResult.matched) {
-        dueDate = dateResult.date;
-        text = dateResult.remaining;
-    }
-    if (dateResult.time) {
-        dueTime = dateResult.time;
-        text = dateResult.remaining;
-    }
-
-    // 起始前缀
-    const mStart = text.match(/^(!!|!)\s+(.+)$/);
-    if (mStart) {
-        priority = mStart[1] === '!!' ? 3 : 2;
-        text = mStart[2];
-    } else {
-        // 末尾后缀
-        const mEnd = text.match(/^(.+?)\s+(!!|!)\s*$/);
-        if (mEnd) {
-            priority = mEnd[2] === '!!' ? 3 : 2;
-            text = mEnd[1];
+function paintQuickAddHighlight() {
+    const hl = ui.quickAddHighlightInner;
+    if (!hl) return;
+    const raw = ui.quickAddInput.value;
+    hl.textContent = '';
+    if (raw) {
+        const { spans } = analyzeQuickAdd(raw);
+        let cursor = 0;
+        for (const s of spans) {
+            if (s.start > cursor) hl.appendChild(document.createTextNode(raw.slice(cursor, s.start)));
+            const mark = document.createElement('mark');
+            mark.className = 'hl-chip';
+            mark.textContent = raw.slice(s.start, s.end);
+            hl.appendChild(mark);
+            cursor = s.end;
         }
+        hl.appendChild(document.createTextNode(raw.slice(cursor)));
     }
+    syncHighlightScroll();
+}
 
-    text = text.trim();
-    return { title: text, priority, tags, dueDate, dueTime };
+function initQuickAddHighlight() {
+    if (!ui.quickAddHighlightInner) return;
+    ui.quickAddInput.addEventListener('input', paintQuickAddHighlight);
+    // 输入框横向滚动（值超过可视宽度）时同步镜像层，否则长文本会左右错位
+    ui.quickAddInput.addEventListener('scroll', syncHighlightScroll);
+    window.addEventListener('resize', syncHighlightScroll);
+    paintQuickAddHighlight();
 }
 
 // ============ 草稿生命周期 ============
@@ -525,6 +527,8 @@ function renderTaskItem(task, group) {
 // ============ 详情面板（草稿驱动）============
 
 function renderDetail() {
+    // 选择器弹层挂在 body 上，详情重绘后锚点已失效，先关掉
+    closePopover();
     ui.detailBody.innerHTML = '';
     if (!view.draft) return;
 
@@ -569,27 +573,25 @@ function renderDetail() {
     );
     ui.detailBody.appendChild(priRow);
 
-    // 截止日期
-    const dueInput = el('input', {
-        type: 'date',
-        value: task.dueDate || '',
-        dataset: { focusKey: 'due' },
-        oninput: (e) => { view.draft.dueDate = e.target.value || null; },
+    // 截止日期 / 截止时间：自绘选择器（原生 input[type=date|time] 的弹层
+    // 在深色主题下永远是刺眼白底，无法跟随主题）
+    const datePicker = createDatePicker({
+        value: task.dueDate || null,
+        auto: isNew && !!(task._dueAutoSet || isGroupToday(task.groupId)),
+        onChange: (v) => {
+            view.draft.dueDate = v;
+            datePicker.el.classList.remove('is-auto');
+            view.draft._dueAutoSet = false;
+        },
     });
-    if (isNew && (task._dueAutoSet || isGroupToday(task.groupId))) {
-        // 自动预填日期（快速添加识别 / 今日分组默认）时高亮一下
-        dueInput.classList.add('is-auto');
-    }
-    // 时间点（HH:MM）
-    const timeInput = el('input', {
-        type: 'time',
-        class: 'detail-time',
-        value: task.dueTime || '',
-        placeholder: '时间',
-        dataset: { focusKey: 'time' },
-        oninput: (e) => { view.draft.dueTime = e.target.value || null; },
+    const timePicker = createTimePicker({
+        value: task.dueTime || null,
+        auto: isNew && !!task.dueTime,
+        onChange: (v) => {
+            view.draft.dueTime = v;
+            timePicker.el.classList.remove('is-auto');
+        },
     });
-    if (isNew && task.dueTime) timeInput.classList.add('is-auto');
     // 提前提醒分钟数（空 = 用全局默认）
     const offsetInput = el('input', {
         type: 'number',
@@ -608,8 +610,8 @@ function renderDetail() {
     const dueRow = el('div', { class: 'detail-row' },
         el('label', {}, '截止'),
         el('div', { class: 'due-fields' },
-            dueInput,
-            timeInput,
+            datePicker.el,
+            timePicker.el,
             el('span', { class: 'due-offset-wrap' },
                 offsetInput,
                 el('span', { class: 'due-offset-suffix' }, '分钟前'),

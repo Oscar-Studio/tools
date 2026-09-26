@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>待办清单 - Oscar Studio</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=2026-09-26b">
     <link rel="stylesheet" href="https://ai.oscarstudio.cn/opilot.css">
 </head>
 <body data-theme="light">
@@ -58,7 +58,10 @@
             <ul id="taskList" class="task-list" role="list"></ul>
             <form id="quickAddForm" class="quick-add" autocomplete="off">
                 <span class="quick-add-icon">＋</span>
-                <input id="quickAddInput" type="text" placeholder="输入任务后回车；支持：明天下午3点 开会 / 一分钟后 喝水 / !! 高优先级 / #标签">
+                <div class="quick-add-field">
+                    <div id="quickAddHighlight" class="quick-add-highlight" aria-hidden="true"><span class="quick-add-highlight-inner"></span></div>
+                    <input id="quickAddInput" type="text" placeholder="输入任务后回车；支持：明天下午3点 开会 / 一分钟后 喝水 / !! 高优先级 / #标签">
+                </div>
                 <button type="submit" class="primary-btn" hidden>添加</button>
             </form>
         </section>
@@ -91,6 +94,6 @@
     <!-- 轻提示 -->
     <div id="toast" class="toast" hidden></div>
 
-    <script type="module" src="./js/app.js?v=2026-09-05b"></script>
+    <script type="module" src="./js/app.js?v=2026-09-26b"></script>
 </body>
 </html>

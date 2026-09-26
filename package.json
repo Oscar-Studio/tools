@@ -10,10 +10,10 @@
     "deploy": "bash ../sync-site.sh tools /www/wwwroot/tools.oscarstudio.cn",
     "test:word-counter": "node tests/word-counter-stats.test.mjs && node tests/word-counter-segments.test.mjs",
     "test:codec": "node tests/codec.test.mjs && node tests/codec-hashes.test.mjs",
-    "test:todo": "node tests/todo-datetime.test.mjs",
+    "test:todo": "node tests/todo-datetime.test.mjs && node tests/todo-quickadd.test.mjs",
     "test:password-generator": "node tests/password-generator.test.mjs",
     "test:qrcode": "node tests/qrcode.test.mjs",
-    "test": "node tests/codec.test.mjs && node tests/codec-hashes.test.mjs && node tests/word-counter-stats.test.mjs && node tests/word-counter-segments.test.mjs && node tests/todo-datetime.test.mjs && node tests/password-generator.test.mjs && node tests/qrcode.test.mjs",
+    "test": "node tests/codec.test.mjs && node tests/codec-hashes.test.mjs && node tests/word-counter-stats.test.mjs && node tests/word-counter-segments.test.mjs && node tests/todo-datetime.test.mjs && node tests/todo-quickadd.test.mjs && node tests/password-generator.test.mjs && node tests/qrcode.test.mjs",
     "prebuild": "node scripts/check-legacy-js.mjs && node scripts/copy-zxcvbn-ts.mjs && node scripts/copy-qrcode.mjs",
     "postbuild": "node scripts/clean-dist-appledouble.mjs"
   },

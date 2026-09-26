@@ -54,6 +54,10 @@ body[data-theme="light"] {
     --muted: #8a8a8a;
     --accent: #2383e2;
     --accent-soft: rgba(35, 131, 226, 0.08);
+    --hl-fg: #1b6ec9;
+    --hl-bg: rgba(35, 131, 226, 0.17);
+    --auto-fg: #b45309;
+    --auto-bg: rgba(245, 158, 11, 0.12);
     --p1: #5b8def;
     --p2: #f59e0b;
     --p3: #e74c3c;
@@ -73,6 +77,10 @@ body[data-theme="dark"] {
     --muted: #7a7a7a;
     --accent: #4f9cf9;
     --accent-soft: rgba(79, 156, 249, 0.14);
+    --hl-fg: #8cc2ff;
+    --hl-bg: rgba(79, 156, 249, 0.26);
+    --auto-fg: #f0b357;
+    --auto-bg: rgba(245, 158, 11, 0.16);
     --p1: #5b8def;
     --p2: #f59e0b;
     --p3: #e74c3c;
@@ -799,17 +807,73 @@ body[data-theme="dark"] {
     flex-shrink: 0;
 }
 
-.quick-add input {
+/* 快速添加的实时高亮：镜像层 + 透明文字的 input 叠在一起 */
+.quick-add-field {
+    position: relative;
     flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--text);
-    font: inherit;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    height: 20px;
 }
 
-.quick-add input::placeholder {
+/* 两层的字体度量必须逐项一致，否则文字会错位 */
+.quick-add-highlight,
+.quick-add-highlight-inner,
+.quick-add-field input {
+    font: inherit;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: normal;
+    white-space: pre;
+}
+
+/* 外层负责「按输入框宽度裁掉溢出」，内层跟着输入框的横向滚动平移 */
+.quick-add-highlight {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    color: var(--text);
+    pointer-events: none;
+    user-select: none;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.quick-add-highlight-inner {
+    display: block;
+    height: 20px;
+    will-change: transform;
+}
+
+.quick-add-field input {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text);
+}
+
+.quick-add-field input::placeholder {
     color: var(--muted);
+}
+
+/* 选中的背景不能用 padding/margin：那会改变字符步进宽度，导致后面的字错位。
+   用 box-shadow 外扩画圆角底色，对排版零影响。 */
+.quick-add-highlight .hl-chip {
+    color: var(--hl-fg);
+    background: none;
+    border-radius: 5px;
+    box-shadow: 0 0 0 3px var(--hl-bg);
 }
 
 .primary-btn {
@@ -883,7 +947,6 @@ body[data-theme="dark"] {
     font-size: 12px;
 }
 
-.detail-row input[type="date"],
 .detail-row input[type="text"] {
     border: none;
     outline: none;
@@ -905,31 +968,339 @@ body[data-theme="dark"] {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
-.detail-time {
-    border: none;
+/* ============ 自绘日期 / 时间选择器 ============ */
+
+.field-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.field-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid transparent;
     outline: none;
     background: var(--surface);
     border-radius: var(--r-sm);
     padding: 5px 10px;
     color: var(--text);
     font: inherit;
-    width: 110px;
+    font-size: 13px;
+    line-height: 1.2;
+    cursor: pointer;
+    white-space: nowrap;
     transition: all var(--t-fast) var(--ease);
 }
 
-.detail-time:focus {
-    background: var(--bg);
+.field-chip:hover {
+    background: var(--surface-hover);
+}
+
+.field-chip:focus-visible {
+    border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-.detail-time.is-auto {
+.field-chip.is-empty {
+    color: var(--muted);
+}
+
+.field-chip.is-empty:hover {
+    color: var(--text-soft);
+}
+
+.field-chip-icon {
+    font-size: 12px;
+    line-height: 1;
+    opacity: 0.85;
+}
+
+.field-chip-label {
+    font-variant-numeric: tabular-nums;
+}
+
+.field-wrap.is-auto .field-chip {
     border: 1px dashed var(--p2);
-    background: rgba(245, 158, 11, 0.08);
-    color: var(--p2);
+    background: var(--auto-bg);
+    color: var(--auto-fg);
+}
+
+/* 清除按钮：只有填了值才出现，浮在 chip 右上角 */
+.field-clear {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--t-fast) var(--ease);
+}
+
+.field-clear:hover {
+    color: var(--p3);
+    border-color: var(--p3);
+}
+
+/* 弹层本体：挂在 body 上，深浅色共用一套变量 */
+.popover {
+    position: fixed;
+    z-index: 1500;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg);
+    padding: 12px;
+    animation: popIn 160ms var(--ease-out) both;
+    user-select: none;
+}
+
+@keyframes popIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---- 日历 ---- */
+
+.cal {
+    width: 252px;
+}
+
+.cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.cal-title {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.cal-nav {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.cal-nav:hover {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.cal-weekday {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    padding-bottom: 4px;
+}
+
+.cal-day {
+    height: 30px;
+    border: none;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.cal-day:hover {
+    background: var(--surface-hover);
+}
+
+.cal-day.is-weekend {
+    color: var(--p3);
+}
+
+.cal-day.is-out {
+    color: var(--muted);
+    opacity: 0.45;
+}
+
+.cal-day.is-today {
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+    font-weight: 600;
+}
+
+.cal-day.is-selected {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.cal-day.is-selected:hover {
+    background: var(--accent);
+}
+
+.cal-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.cal-quick {
+    border: none;
+    background: var(--surface);
+    color: var(--text-soft);
+    font: inherit;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.cal-quick:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+
+.cal-quick.is-clear {
+    margin-left: auto;
+    color: var(--muted);
+}
+
+.cal-quick.is-clear:hover {
+    color: var(--p3);
+    background: rgba(231, 76, 60, 0.1);
+}
+
+/* ---- 时间选择 ---- */
+
+.timepick {
+    width: 208px;
+}
+
+.timepick-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.timepick-quick-btn {
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-soft);
+    font: inherit;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.timepick-quick-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.timepick-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.timepick-col-head {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.timepick-col {
+    /* relative 是必须的：JS 用 target.offsetTop - (col.clientHeight - h)/2
+       把选中项滚到中间，不加的话 offsetParent 会是 .popover，坐标会整体偏移。 */
+    position: relative;
+    height: 148px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    border-radius: var(--r-sm);
+    background: var(--bg-soft);
+    padding: 2px 0;
+}
+
+.timepick-cell {
+    display: block;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    line-height: 26px;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.timepick-cell:hover {
+    background: var(--surface-hover);
+}
+
+.timepick-cell.is-selected {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.timepick-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.timepick-foot .cal-quick.is-clear {
+    margin-left: 0;
+}
+
+.timepick-foot .primary-btn {
+    padding: 4px 14px;
+    font-size: 12.5px;
 }
 
 .due-offset-wrap {
@@ -1268,8 +1639,8 @@ body[data-theme="dark"] {
 
 .detail-row input.is-auto {
     border: 1px dashed var(--p2);
-    background: rgba(245, 158, 11, 0.08);
-    color: var(--p2);
+    background: var(--auto-bg);
+    color: var(--auto-fg);
 }
 
 /* ==================== 对话框 ==================== */

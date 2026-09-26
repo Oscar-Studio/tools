@@ -6,6 +6,12 @@
 //   r.date      -> 'YYYY-MM-DD' 或 null
 //   r.time      -> 'HH:MM' 或 null
 //   r.remaining -> 去掉日期/时间片段后剩余的标题
+//   r.dateSpan  -> [start, end) 日期片段在**传入 text** 中的位置（未命中为 null）
+//   r.timeSpan  -> [start, end) 时间片段在**传入 text** 中的位置（未命中为 null）
+//
+// 注意：span 是相对「传给本函数的字符串」的偏移。若调用方先做过删减
+// （例如剥离 #标签），必须用等长遮罩（把命中字符换成空格）而不是删除，
+// 否则 span 会错位。
 //
 // 日期支持：
 //   中文自然语言：今天 / 明天 / 后天 / 大后天 / 周X / 本周X / 下周X / 周末 / 下周末 / 月底 / 下月底
@@ -85,12 +91,21 @@ function nextWeekday(today, target) {
 
 // 把命中片段前后的空白收掉，再合并为 remaining。
 function spliceRemaining(text, start, end) {
-    const before = text.slice(0, start);
-    const after = text.slice(end);
-    const leftTrimmed = before.replace(/\s+$/, '');
-    const rightStart = after.search(/\S/);
-    const rightTrimmed = rightStart === -1 ? '' : after.slice(rightStart);
-    return (leftTrimmed + (leftTrimmed && rightTrimmed ? ' ' : '') + rightTrimmed).trim();
+    return stripSpans(text, [[start, end]]);
+}
+
+// 删掉若干片段并把空白折叠成单个空格（与旧 spliceRemaining 单区间行为一致）。
+function stripSpans(text, ranges) {
+    const sorted = ranges.slice().sort((a, b) => a[0] - b[0]);
+    let out = '';
+    let cursor = 0;
+    for (const [start, end] of sorted) {
+        if (start < cursor) continue; // 区间重叠，跳过
+        out += text.slice(cursor, start);
+        cursor = end;
+    }
+    out += text.slice(cursor);
+    return out.replace(/\s+/g, ' ').trim();
 }
 
 // 时段 → 24h 偏移。12 点为正午；其他时间按 12-hour clock 加 12。
@@ -367,13 +382,17 @@ function formatHHMM({ h, m }) {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-export function parseTimeExpression(text, today = new Date()) {
+// 解析时间表达式。
+// exclude: [start, end) —— 与该区间重叠的命中一律跳过（用来避免日期片段
+// 被时间模式二次吃掉），保证返回的 span 一定落在 exclude 之外。
+export function parseTimeExpression(text, today = new Date(), exclude = null) {
     if (typeof text !== 'string' || !text) {
-        return { matched: false, time: null, date: null, remaining: text || '' };
+        return { matched: false, time: null, date: null, span: null, remaining: text || '' };
     }
     for (const pat of TIME_PATTERNS) {
         const m = text.match(pat.regex);
         if (!m) continue;
+        if (exclude && m.index < exclude[1] && exclude[0] < m.index + m[0].length) continue;
         let result;
         try {
             // rel-* 模式需要 now，其它模式忽略第二参
@@ -382,33 +401,26 @@ export function parseTimeExpression(text, today = new Date()) {
             continue;
         }
         if (!result) continue;
+        const span = [m.index, m.index + m[0].length];
         // 普通模式返回 { h, m }；rel-* 模式返回 { time, date }
-        if (typeof result.h === 'number') {
-            return {
-                matched: true,
-                time: formatHHMM(result),
-                date: null,
-                pattern: pat.name,
-                remaining: spliceRemaining(text, m.index, m.index + m[0].length),
-            };
-        }
         return {
             matched: true,
-            time: result.time,
-            date: result.date || null,
+            time: typeof result.h === 'number' ? formatHHMM(result) : result.time,
+            date: typeof result.h === 'number' ? null : result.date || null,
             pattern: pat.name,
+            span,
             remaining: spliceRemaining(text, m.index, m.index + m[0].length),
         };
     }
-    return { matched: false, time: null, date: null, remaining: text };
+    return { matched: false, time: null, date: null, span: null, remaining: text };
 }
 
 export function parseDateExpression(text, today = new Date()) {
     if (typeof text !== 'string' || !text) {
-        return { matched: false, date: null, time: null, remaining: text || '' };
+        return { matched: false, date: null, time: null, dateSpan: null, timeSpan: null, remaining: text || '' };
     }
-    // 1) 日期
-    let dateResult = { matched: false, date: null, remaining: text };
+    // 1) 日期：在原串上定位，span 直接可用
+    let dateResult = { matched: false, date: null, dateSpan: null };
     for (const pat of PATTERNS) {
         const m = text.match(pat.regex);
         if (!m) continue;
@@ -424,21 +436,28 @@ export function parseDateExpression(text, today = new Date()) {
             matched: true,
             date: toISO(result),
             pattern: pat.name,
-            remaining: spliceRemaining(text, m.index, m.index + m[0].length),
+            dateSpan: [m.index, m.index + m[0].length],
         };
         break;
     }
-    // 2) 时间（无论日期是否命中都尝试一次）
-    const timeResult = parseTimeExpression(dateResult.remaining, today);
+    // 2) 时间：同样在原串上匹配，跳过日期片段；这样 dateSpan / timeSpan
+    //    都是同一坐标系，调用方可以直接拿去高亮。
+    const timeResult = parseTimeExpression(text, today, dateResult.dateSpan);
     // rel-* 时间模式可以反推出 date（可能跨日），但只在 dateResult 没拿到日期时生效，
     // 否则「3天后 5分钟后」会被误改成今天。
     const finalDate = dateResult.date || timeResult.date;
+    const ranges = [];
+    if (dateResult.dateSpan) ranges.push(dateResult.dateSpan);
+    if (timeResult.span) ranges.push(timeResult.span);
     return {
         matched: dateResult.matched || timeResult.matched,
         date: finalDate,
         pattern: dateResult.pattern,
+        dateSpan: dateResult.dateSpan,
         time: timeResult.matched ? timeResult.time : null,
         timePattern: timeResult.matched ? timeResult.pattern : null,
-        remaining: timeResult.matched ? timeResult.remaining : dateResult.remaining,
+        timeSpan: timeResult.span,
+        remaining: ranges.length ? stripSpans(text, ranges) : text,
     };
 }
+

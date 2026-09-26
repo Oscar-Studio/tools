@@ -29,6 +29,7 @@ const ui = {
     taskList: document.getElementById('taskList'),
     quickAddForm: document.getElementById('quickAddForm'),
     quickAddInput: document.getElementById('quickAddInput'),
+    quickAddHighlightInner: document.querySelector('#quickAddHighlight .quick-add-highlight-inner'),
     detailPanel: document.getElementById('detailPanel'),
     detailBody: document.getElementById('detailBody'),
     closeDetailBtn: document.getElementById('closeDetailBtn'),
