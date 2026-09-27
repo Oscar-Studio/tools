@@ -173,6 +173,29 @@ export function formatScore(score) {
   return '有点像';
 }
 
+/** 语义检索的四种状态 */
+export const SEMANTIC_STATUS = {
+  IDLE: 'idle',       // 没在搜、也没结果（例如清空了搜索词）
+  LOADING: 'loading', // 请求在途，还没有可用结果
+  READY: 'ready',     // 已有结果
+  FAILED: 'failed',   // 这次没搜出来
+};
+
+/**
+ * 语义检索的展示状态。
+ *
+ * 关键：**已有结果时绝不能再转圈**。曾经写成 `pending || hasResults`，
+ * 结果是结果一出来、状态就永远停在"语义搜索中…"，和旁边那行
+ * 「另有 N 条意思相近」自相矛盾。
+ * 判定顺序即优先级：结果 > 在途 > 失败 > 空闲。
+ */
+export function semanticStatus({ pending = false, failed = false, hasResults = false } = {}) {
+  if (hasResults) return SEMANTIC_STATUS.READY;
+  if (pending) return SEMANTIC_STATUS.LOADING;
+  if (failed) return SEMANTIC_STATUS.FAILED;
+  return SEMANTIC_STATUS.IDLE;
+}
+
 /** 从任意余弦阈值起收，低于阈值的结果丢掉，避免硬凑 */
 export function filterByScore(items, minScore = 0.45) {
   return (items || []).filter((it) => Number(it.score) >= minScore);

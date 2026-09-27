@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_LIMIT,
   MIN_SEMANTIC_CHARS,
+  SEMANTIC_STATUS,
   SUGGESTIONS,
   buildCategoryIndex,
   dedupeByFace,
@@ -16,6 +17,7 @@ import {
   mergeResults,
   normalizeQuery,
   scoreLocal,
+  semanticStatus,
   shouldRunSemantic,
 } from '../legacy-tools/kaomoji/js/kaomoji-core.js';
 
@@ -312,5 +314,55 @@ console.log('✔ emptyHint');
   assert.equal(new Set(SUGGESTIONS).size, SUGGESTIONS.length);
 }
 console.log('✔ SUGGESTIONS');
+
+// ============ semanticStatus ============
+// 回归：原先的判定写成 `pending || hasResults`，结果语义结果一返回，
+// 状态就永远停在「语义搜索中…」转圈——和旁边「另有 N 条意思相近」
+// 那行说明自相矛盾（结果明明已经出来了）。
+{
+  const S = SEMANTIC_STATUS;
+
+  // 核心回归：已有结果时不能转圈，哪怕 pending 标志还没被清掉
+  assert.equal(
+    semanticStatus({ pending: true, hasResults: true, failed: false }),
+    S.READY,
+    '结果已就绪时不得显示「语义搜索中」'
+  );
+  assert.equal(
+    semanticStatus({ pending: false, hasResults: true, failed: false }),
+    S.READY,
+    '结果已就绪、请求已结束 → READY'
+  );
+
+  // 在途且还没结果 → 转圈
+  assert.equal(
+    semanticStatus({ pending: true, hasResults: false, failed: false }),
+    S.LOADING,
+    '请求在途、尚无结果 → LOADING'
+  );
+
+  // 失败
+  assert.equal(
+    semanticStatus({ pending: false, hasResults: false, failed: true }),
+    S.FAILED
+  );
+  // 失败时若残留 pending，仍应显示 LOADING（在搜就说在搜）
+  assert.equal(
+    semanticStatus({ pending: true, hasResults: false, failed: true }),
+    S.LOADING,
+    '在途优先于失败'
+  );
+
+  // 空闲：清空搜索词 / 选了分类后
+  assert.equal(semanticStatus({}), S.IDLE, '无参数默认空闲');
+  assert.equal(
+    semanticStatus({ pending: false, hasResults: false, failed: false }),
+    S.IDLE
+  );
+
+  // 四个状态互不相同（防止枚举值写重导致 switch 落错分支）
+  assert.equal(new Set(Object.values(S)).size, 4, '状态值必须互不相同');
+}
+console.log('✔ semanticStatus');
 
 console.log('\n🎉 all kaomoji tests passed');

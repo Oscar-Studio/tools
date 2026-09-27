@@ -7,6 +7,7 @@
 // =====================================================
 import {
   SUGGESTIONS,
+  SEMANTIC_STATUS,
   buildCategoryIndex,
   emptyHint,
   escapeHtml,
@@ -16,6 +17,7 @@ import {
   highlightText,
   mergeResults,
   normalizeQuery,
+  semanticStatus,
   shouldRunSemantic,
 } from './kaomoji-core.js';
 
@@ -193,17 +195,24 @@ function render() {
   else if (q) dom.resultTitle.textContent = `搜「${q}」`;
   else dom.resultTitle.textContent = '全部';
 
-  // 语义状态
-  if (useSemantic || state.semanticPending) {
-    dom.semanticState.hidden = false;
-    dom.semanticState.classList.remove('is-failed');
-    dom.semanticState.innerHTML = '<span class="spinner" aria-hidden="true"></span>语义搜索中…';
-  } else if (state.semanticFailed) {
-    dom.semanticState.hidden = false;
-    dom.semanticState.classList.add('is-failed');
-    dom.semanticState.textContent = '语义搜索暂不可用';
-  } else {
-    dom.semanticState.hidden = true;
+  // 语义状态：已有结果时不再转圈（判定在 kaomoji-core 的 semanticStatus 里）
+  switch (semanticStatus({
+    pending: !!state.semanticPending,
+    failed: !!state.semanticFailed,
+    hasResults: !!useSemantic,
+  })) {
+    case SEMANTIC_STATUS.LOADING:
+      dom.semanticState.hidden = false;
+      dom.semanticState.classList.remove('is-failed');
+      dom.semanticState.innerHTML = '<span class="spinner" aria-hidden="true"></span>语义搜索中…';
+      break;
+    case SEMANTIC_STATUS.FAILED:
+      dom.semanticState.hidden = false;
+      dom.semanticState.classList.add('is-failed');
+      dom.semanticState.textContent = '语义搜索暂不可用';
+      break;
+    default:
+      dom.semanticState.hidden = true;
   }
 
   // 说明行
