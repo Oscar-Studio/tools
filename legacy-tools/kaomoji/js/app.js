@@ -209,8 +209,11 @@ function render() {
   // 说明行
   if (useSemantic && semantic.length) {
     dom.resultMeta.hidden = false;
+    const how = state.semantic.cached
+      ? '（命中缓存，瞬时返回）'
+      : `语义检索耗时约 ${(state.semantic.embedMs / 1000).toFixed(1)}s`;
     dom.resultMeta.textContent =
-      `直接匹配 ${exact.length} 条，另有 ${semantic.length} 条意思相近 · 语义检索耗时约 ${(state.semantic.embedMs / 1000).toFixed(1)}s`;
+      `直接匹配 ${exact.length} 条，另有 ${semantic.length} 条意思相近 · ${how}`;
   } else {
     dom.resultMeta.hidden = true;
   }
@@ -247,7 +250,12 @@ async function runSemantic(q, token) {
       state.semantic = null;
     } else {
       state.semanticFailed = false;
-      state.semantic = { items: json.items || [], embedMs: json.embedMs || 0, token };
+      state.semantic = {
+        items: json.items || [],
+        embedMs: json.embedMs || 0,
+        cached: !!json.cached,
+        token,
+      };
     }
     render();
   } catch (_) {
