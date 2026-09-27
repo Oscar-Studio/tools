@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="view-transition" content="same-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5">
+  <meta name="theme-color" content="#f5f3ef">
+  <meta name="description" content="图片压缩器：批量拖入图片，本地压缩并对比压缩前后体积，可选 JPEG / WebP / PNG 与最大宽度。图片不上传，全部在浏览器完成。">
+  <title>图片压缩器 · Oscar Studio</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="./styles.css">
+  <script>
+    // 渲染前应用主题，避免闪烁（与 codec / qrcode 一致）
+    (function() {
+      try {
+        var t = localStorage.getItem('oscar-theme');
+        var resolved;
+        if (t === 'light' || t === 'dark') {
+          resolved = t;
+        } else {
+          resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', resolved);
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="back-link" href="/" aria-label="返回工具首页">
+      <span aria-hidden="true">←</span>
+      <span>工具集</span>
+    </a>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">🗜</span>
+      <span>图片压缩器</span>
+      <span class="beta">SQUEEZE</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-button" id="themeBtn" type="button" aria-label="切换主题" title="切换主题">☼</button>
+    </div>
+  </header>
+
+  <main class="app-shell" style="view-transition-name: vt-tool-image-compressor">
+    <section class="intro-row">
+      <div>
+        <p class="eyebrow">EVERYTHING STAYS LOCAL</p>
+        <h1>把体积，<em>压下去。</em></h1>
+        <p class="intro-copy">拖入一批图片，本地压缩后逐张对比前后体积，支持 JPEG / WebP / PNG 与最大宽度限制。图片不会离开你的设备。</p>
+      </div>
+      <div class="privacy-note">
+        <span class="privacy-dot"></span>
+        <span>纯本地压缩<br><small>图片不上传</small></span>
+      </div>
+    </section>
+
+    <!-- ============ 上传区 ============ -->
+    <!-- input 不用 hidden 属性而是 CSS 视觉隐藏：hidden 会让它退出可聚焦序列，
+         键盘用户在 label 上按 Enter 打不开文件选择器。 -->
+    <label class="dropzone card" id="dropzone" for="fileInput" tabindex="0">
+      <input type="file" id="fileInput" class="visually-hidden" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif" multiple>
+      <div class="drop-empty" id="dropEmpty">
+        <span class="drop-icon" aria-hidden="true">🖼</span>
+        <span class="drop-title">点击选择，或把图片拖到这里</span>
+        <span class="drop-hint">支持 JPEG / PNG / WebP / GIF / BMP / AVIF，可多选</span>
+      </div>
+    </label>
+
+    <!-- ============ 参数 ============ -->
+    <section class="panel panel-options card">
+      <div class="surface-toolbar">
+        <div class="surface-title">
+          <span class="label">SETTINGS</span>
+          <h2>压缩参数</h2>
+        </div>
+        <div class="surface-actions">
+          <button class="text-button" id="recompressBtn" type="button" disabled>按新参数重压</button>
+          <button class="text-button" id="downloadAllBtn" type="button" disabled>下载全部</button>
+          <button class="text-button" id="clearBtn" type="button" disabled>清空</button>
+        </div>
+      </div>
+      <div class="options">
+        <div class="option-row">
+          <label class="option-label"><span class="opt-icon">🖼</span><span>输出格式</span></label>
+          <div class="seg-control" id="formatRow" role="radiogroup" aria-label="输出格式">
+            <button class="seg" data-format="image/jpeg" type="button" role="radio" aria-checked="false">JPEG</button>
+            <button class="seg is-active" data-format="image/webp" type="button" role="radio" aria-checked="true">WebP</button>
+            <button class="seg" data-format="image/png" type="button" role="radio" aria-checked="false">PNG</button>
+          </div>
+          <p class="option-hint" id="formatHint">WebP 压缩率通常优于 JPEG；PNG 无损，质量滑块对它无效。</p>
+        </div>
+
+        <div class="option-row">
+          <label class="option-label" for="qualitySlider">
+            <span class="opt-icon">🎚</span><span>质量</span>
+            <span class="opt-value" id="qualityVal">80%</span>
+          </label>
+          <input type="range" id="qualitySlider" class="slider" min="5" max="100" step="1" value="80">
+        </div>
+
+        <div class="option-row">
+          <label class="option-label" for="maxWidth">
+            <span class="opt-icon">📏</span><span>最大尺寸</span>
+            <span class="opt-value" id="maxWidthVal">不限</span>
+          </label>
+          <input type="text" id="maxWidth" class="dim-input" inputmode="numeric" placeholder="留空不限，或填 800 / 800x600">
+          <p class="option-hint">等比缩小，只缩不放。超出画布上限的大图请先限制尺寸。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 汇总 ============ -->
+    <section class="summary card" id="summary" hidden>
+      <div class="summary-item">
+        <span class="summary-label">共</span>
+        <span class="summary-value" id="sumCount">0</span>
+        <span class="summary-unit">张</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">原始</span>
+        <span class="summary-value" id="sumOriginal">0 B</span>
+      </div>
+      <div class="summary-arrow" aria-hidden="true">→</div>
+      <div class="summary-item">
+        <span class="summary-label">压缩后</span>
+        <span class="summary-value is-accent" id="sumCompressed">0 B</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">节省</span>
+        <span class="summary-value is-green" id="sumSaved">0%</span>
+      </div>
+    </section>
+
+    <!-- ============ 结果列表 ============ -->
+    <section class="panel panel-results card" id="resultsPanel" hidden>
+      <div class="surface-toolbar">
+        <div class="surface-title">
+          <span class="label">RESULTS</span>
+          <h2>逐张对比</h2>
+        </div>
+      </div>
+      <div class="result-list" id="resultList"></div>
+    </section>
+
+    <p class="global-error" id="globalError" hidden></p>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

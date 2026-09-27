@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="view-transition" content="same-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5">
+  <meta name="theme-color" content="#f5f3ef">
+  <meta name="description" content="正则表达式工作台：实时高亮匹配、捕获组列表、替换预览、常用片段库。全部在浏览器本地运行，正则与测试文本都不上传。">
+  <title>正则表达式工作台 · Oscar Studio</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="./styles.css">
+  <script>
+    // 渲染前应用主题，避免闪烁（与 codec / qrcode 一致）
+    (function() {
+      try {
+        var t = localStorage.getItem('oscar-theme');
+        var resolved;
+        if (t === 'light' || t === 'dark') {
+          resolved = t;
+        } else {
+          resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', resolved);
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="back-link" href="/" aria-label="返回工具首页">
+      <span aria-hidden="true">←</span>
+      <span>工具集</span>
+    </a>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">🔤</span>
+      <span>正则工作台</span>
+      <span class="beta">REGEX LAB</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-button" id="shareBtn" type="button" aria-label="复制分享链接" title="复制分享链接">⤴</button>
+      <button class="icon-button" id="themeBtn" type="button" aria-label="切换主题" title="切换主题">☼</button>
+    </div>
+  </header>
+
+  <main class="app-shell" style="view-transition-name: vt-tool-regex">
+    <section class="intro-row">
+      <div>
+        <p class="eyebrow">EVERYTHING STAYS LOCAL</p>
+        <h1>把模式，<em>看得见。</em></h1>
+        <p class="intro-copy">实时高亮匹配、拆开捕获组、预览替换结果，内置 13 条常用片段。全部在浏览器里跑，正则和测试文本不会离开你的设备。</p>
+      </div>
+      <div class="privacy-note">
+        <span class="privacy-dot"></span>
+        <span>纯本地运行<br><small>内容不上传</small></span>
+      </div>
+    </section>
+
+    <!-- ============ 模式编辑条 ============ -->
+    <section class="pattern-bar card">
+      <div class="pattern-editor">
+        <span class="delim" aria-hidden="true">/</span>
+        <input id="patternInput" class="pattern-input" type="text" spellcheck="false" autocapitalize="off" autocomplete="off"
+               placeholder="\d{4}-\d{2}-\d{2}" aria-label="正则表达式">
+        <span class="delim" aria-hidden="true">/</span>
+      </div>
+      <div class="flag-row" id="flagRow" role="group" aria-label="标志位"></div>
+      <div class="pattern-status" id="patternStatus" role="status" aria-live="polite"></div>
+      <div class="pattern-actions">
+        <button class="text-button" id="sampleBtn" type="button">示例</button>
+        <button class="text-button" id="clearBtn" type="button">清空</button>
+      </div>
+    </section>
+
+    <div class="layout">
+      <!-- ============ 左：测试文本 ============ -->
+      <section class="panel panel-input card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label">TEST STRING</span>
+            <h2>测试文本</h2>
+          </div>
+          <div class="surface-actions">
+            <span class="counter" id="matchCounter">0 处匹配</span>
+          </div>
+        </div>
+        <textarea id="textInput" class="big-input" spellcheck="false"
+                  placeholder="粘贴要测试的文本…"></textarea>
+      </section>
+
+      <!-- ============ 右：匹配结果 ============ -->
+      <section class="panel panel-matches card">
+        <div class="surface-toolbar">
+          <div class="surface-title">
+            <span class="label">MATCHES</span>
+            <h2>匹配结果</h2>
+          </div>
+        </div>
+        <div class="match-list" id="matchList"></div>
+      </section>
+    </div>
+
+    <!-- ============ 替换预览 ============ -->
+    <section class="panel panel-replace card">
+      <div class="surface-toolbar">
+        <div class="surface-title">
+          <span class="label">REPLACE</span>
+          <h2>替换预览</h2>
+        </div>
+        <div class="surface-actions">
+          <button class="text-button" id="copyResultBtn" type="button" disabled>复制结果</button>
+        </div>
+      </div>
+      <div class="replace-body">
+        <input id="replaceInput" class="replace-input" type="text" spellcheck="false"
+               placeholder="替换成…支持 $1、$&lt;name&gt;、$$、$&amp;" aria-label="替换模板">
+        <p class="replace-hint" id="replaceHint">用 $1 引用第 1 个捕获组，$&lt;name&gt; 引用命名组，$$ 输出字面 $，$&amp; 输出整个匹配。</p>
+        <pre class="replace-preview" id="replacePreview"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 常用片段 ============ -->
+    <section class="panel panel-snippets card">
+      <div class="surface-toolbar">
+        <div class="surface-title">
+          <span class="label">SNIPPETS</span>
+          <h2>常用片段</h2>
+        </div>
+        <div class="surface-actions">
+          <span class="counter">点击填入，清空替换框可看高亮</span>
+        </div>
+      </div>
+      <div class="snippet-groups" id="snippetGroups"></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

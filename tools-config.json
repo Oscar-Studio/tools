@@ -95,6 +95,30 @@
       ],
       "icon": "📱",
       "demoFile": "qrcode/index.html"
+    },
+    {
+      "id": "regex",
+      "name": "正则表达式工作台",
+      "description": "实时高亮匹配、拆解捕获组、替换结果预览，内置 13 条常用片段与可分享链接。纯本地运行，正则与测试文本都不上传。",
+      "tags": [
+        "开发",
+        "正则",
+        "文本"
+      ],
+      "icon": "🔤",
+      "demoFile": "regex/index.html"
+    },
+    {
+      "id": "image-compressor",
+      "name": "图片压缩器",
+      "description": "批量压缩图片并逐张对比前后体积，可选 JPEG / WebP / PNG、质量与最大尺寸。图片不上传，全部在浏览器完成。",
+      "tags": [
+        "工具",
+        "图片",
+        "效率"
+      ],
+      "icon": "🗜",
+      "demoFile": "image-compressor/index.html"
     }
   ]
 }
