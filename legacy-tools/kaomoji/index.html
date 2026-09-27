@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="view-transition" content="same-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5">
+  <meta name="theme-color" content="#f5f3ef">
+  <meta name="description" content="颜文字大全：按情境浏览或用一句话描述你的心情，模糊搜索出最贴切的颜文字。搜「想找个无语到不想说话的」也能命中。">
+  <title>颜文字大全 · Oscar Studio</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="./styles.css">
+  <script>
+    // 渲染前应用主题，避免闪烁（与 codec / qrcode 一致）
+    (function() {
+      try {
+        var t = localStorage.getItem('oscar-theme');
+        var resolved;
+        if (t === 'light' || t === 'dark') {
+          resolved = t;
+        } else {
+          resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', resolved);
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="back-link" href="/" aria-label="返回工具首页">
+      <span aria-hidden="true">←</span>
+      <span>工具集</span>
+    </a>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">(๑•̀ㅂ•́)و✧</span>
+      <span>颜文字大全</span>
+      <span class="beta">MOJI LAB</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-button" id="themeBtn" type="button" aria-label="切换主题" title="切换主题">☼</button>
+    </div>
+  </header>
+
+  <main class="app-shell" style="view-transition-name: vt-tool-kaomoji">
+    <section class="intro-row">
+      <div>
+        <p class="eyebrow">DESCRIBE YOUR MOOD</p>
+        <h1>把心情，<em>写成一张脸。</em></h1>
+        <p class="intro-copy">按情境浏览，或者直接用一句话描述你现在的心情——搜「无语到不想说话」也能找到对的颜文字。</p>
+      </div>
+      <div class="privacy-note">
+        <span class="privacy-dot"></span>
+        <span>搜索词不上传<br><small>仅用于语义匹配</small></span>
+      </div>
+    </section>
+
+    <!-- ============ 搜索框 ============ -->
+    <section class="search-bar card">
+      <div class="search-row">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input id="searchInput" class="search-input" type="search" autocomplete="off" spellcheck="false"
+               placeholder="想找个无语到不想说话的…" aria-label="搜索颜文字">
+        <button class="clear-btn" id="clearBtn" type="button" hidden aria-label="清空搜索">×</button>
+      </div>
+      <div class="suggest-row" id="suggestRow"></div>
+    </section>
+
+    <!-- ============ 分类 ============ -->
+    <section class="panel panel-cats card">
+      <div class="surface-toolbar">
+        <div class="surface-title">
+          <span class="label">CATEGORIES</span>
+          <h2>按情境浏览</h2>
+        </div>
+        <div class="surface-actions">
+          <span class="counter" id="totalCount">载入中…</span>
+        </div>
+      </div>
+      <div class="cat-row" id="catRow"></div>
+    </section>
+
+    <!-- ============ 结果 ============ -->
+    <section class="panel panel-results card">
+      <div class="surface-toolbar">
+        <div class="surface-title">
+          <span class="label">RESULTS</span>
+          <h2 id="resultTitle">全部</h2>
+        </div>
+        <div class="surface-actions">
+          <span class="semantic-state" id="semanticState" hidden>
+            <span class="spinner" aria-hidden="true"></span>语义搜索中…
+          </span>
+        </div>
+      </div>
+      <div class="result-meta" id="resultMeta" hidden></div>
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty" hidden></div>
+    </section>
+
+    <p class="global-error" id="globalError" hidden></p>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

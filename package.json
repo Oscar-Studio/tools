@@ -15,7 +15,8 @@
     "test:qrcode": "node tests/qrcode.test.mjs",
     "test:regex": "node tests/regex.test.mjs",
     "test:image-compressor": "node tests/image-compressor.test.mjs",
-    "test": "node tests/codec.test.mjs && node tests/codec-hashes.test.mjs && node tests/word-counter-stats.test.mjs && node tests/word-counter-segments.test.mjs && node tests/todo-datetime.test.mjs && node tests/todo-quickadd.test.mjs && node tests/password-generator.test.mjs && node tests/qrcode.test.mjs && node tests/regex.test.mjs && node tests/image-compressor.test.mjs",
+    "test:kaomoji": "node tests/kaomoji.test.mjs",
+    "test": "node tests/codec.test.mjs && node tests/codec-hashes.test.mjs && node tests/word-counter-stats.test.mjs && node tests/word-counter-segments.test.mjs && node tests/todo-datetime.test.mjs && node tests/todo-quickadd.test.mjs && node tests/password-generator.test.mjs && node tests/qrcode.test.mjs && node tests/regex.test.mjs && node tests/image-compressor.test.mjs && node tests/kaomoji.test.mjs",
     "prebuild": "node scripts/check-legacy-js.mjs && node scripts/copy-zxcvbn-ts.mjs && node scripts/copy-qrcode.mjs",
     "postbuild": "node scripts/clean-dist-appledouble.mjs"
   },

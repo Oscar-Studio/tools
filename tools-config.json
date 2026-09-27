@@ -119,6 +119,19 @@
       ],
       "icon": "🗜",
       "demoFile": "image-compressor/index.html"
+    },
+    {
+      "id": "kaomoji",
+      "name": "颜文字大全",
+      "description": "按情境浏览或用一句话描述心情来模糊搜索，覆盖 30 类情境。语义检索在服务器完成，搜索词不用于训练。",
+      "tags": [
+        "工具",
+        "颜文字",
+        "表达"
+      ],
+      "icon": "(๑•̀ㅂ•́)و✧",
+      "featured": true,
+      "demoFile": "kaomoji/index.html"
     }
   ]
 }
