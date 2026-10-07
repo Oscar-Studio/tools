@@ -61,45 +61,6 @@ export const TopBar = forwardRef<HTMLInputElement, TopBarProps>(function TopBar(
     return () => document.removeEventListener('keydown', onKey);
   }, [searchOpen]);
 
-  // 移动端不加载 plasma
-  useEffect(() => {
-    let particleUI: any = null;
-    const loaded = new Set<string>();
-
-    const isPlasma = () => {
-      try { return localStorage.getItem('oscar-quality') === 'plasma'; } catch { return false; }
-    };
-    const loadScript = (src: string) =>
-      new Promise<void>((resolve, reject) => {
-        if (loaded.has(src)) return resolve();
-        const el = document.createElement('script');
-        el.src = src;
-        el.onload = () => { loaded.add(src); resolve(); };
-        el.onerror = reject;
-        document.head.appendChild(el);
-      });
-    const destroyParticle = () => {
-      if (particleUI && typeof particleUI.destroy === 'function') particleUI.destroy();
-      particleUI = null;
-    };
-    const initParticle = async () => {
-      try {
-        await loadScript('/particle-engine/particle-core.js');
-        await loadScript('/particle-engine/particle-ui.js');
-        const W = window as any;
-        if (typeof W.ParticleUI === 'function') {
-          particleUI = new W.ParticleUI(document.body, { particleCount: 200, quality: 'plasma' });
-        }
-      } catch (e) {
-        console.error('Failed to load particle UI:', e);
-      }
-    };
-    const isMobile = typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-    if (isPlasma() && !isMobile) initParticle();
-    else destroyParticle();
-    return () => destroyParticle();
-  }, []);
-
   return (
     <header className="top-bar">
       <div className="breadcrumb">

@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { seoInject } from './vite-plugin-seo-inject';
 
 export default defineConfig({
   base: '/',
   plugins: [
     react(),
+    seoInject(),
     viteStaticCopy({
       targets: [
         { src: 'tools-config.json', dest: '.' },
