@@ -22,21 +22,6 @@ export const TopBar = forwardRef<HTMLInputElement, TopBarProps>(function TopBar(
     document.body.appendChild(s);
   }, []);
 
-  // 加载 opilot
-  useEffect(() => {
-    const style = document.createElement('link');
-    style.rel = 'stylesheet';
-    style.href = 'https://ai.oscarstudio.cn/opilot.css';
-    document.head.appendChild(style);
-    const id = 'oscar-opilot';
-    if (document.getElementById(id)) return;
-    const s = document.createElement('script');
-    s.id = id;
-    s.src = 'https://ai.oscarstudio.cn/opilot.js';
-    s.async = true;
-    document.body.appendChild(s);
-  }, []);
-
   // 把 user-button.js 生成的 "登录/注册" 按钮改名为 "登录"
   useEffect(() => {
     const shorten = () => {

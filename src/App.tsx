@@ -5,7 +5,6 @@ import { Hero } from './components/Hero';
 import { CardGrid } from './components/CardGrid';
 import { MorphCard } from './components/MorphCard';
 import { useToolsConfig } from './hooks/useToolsConfig';
-import { useOpilot } from './hooks/useOpilot';
 import { useUserBackground } from './components/GlassProvider';
 import { useHomeTheme } from './hooks/useHomeTheme';
 import { StudioLanding } from './components/Studio/StudioLanding';
@@ -22,10 +21,8 @@ function AppContent() {
   const [toolsTheme] = useHomeTheme();
   const lockRef = useRef(false);
   const rectsRef = useRef<Record<string, DOMRect>>({});
-  // searchInputRef 转发到 TopBar 内的搜索框；传给 useOpilot 后能在 input mount 时挂上增强。
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  useOpilot(searchInputRef, tools, 'tools');
 
   const handleSelect = useCallback((tool: Tool, rect: DOMRect) => {
     if (lockRef.current) return;
