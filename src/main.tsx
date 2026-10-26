@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ToolsThemeProvider } from './hooks/useHomeTheme';
 import './styles/tokens.css';
 import './styles/globals.css';
 // subsite.css：原 public/style.css 的内容（含 .top-bar / .hero / .card-* 等），
@@ -19,10 +18,6 @@ const WhiteboardApp = React.lazy(() =>
 // HashRouter：避免服务器 try_files 配置改动；`/#/whiteboard` 直接路由到白板。
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {/* ToolsThemeProvider：放在最外层，让 TopBar / AppContent / 后续子页
-        都拿到同一个 toolsTheme state —— 否则各自 useState 会导致切换后
-        AppContent 拿不到新值，StudioLanding 不渲染。 */}
-    <ToolsThemeProvider>
       <ErrorBoundary>
         <HashRouter>
           <Suspense fallback={null}>
@@ -33,6 +28,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           </Suspense>
         </HashRouter>
       </ErrorBoundary>
-    </ToolsThemeProvider>
   </React.StrictMode>,
 );

@@ -1,43 +1,6 @@
 /* =====================================================
    Topbar 主题切换按钮（classic / studio）
    ===================================================== */
-.theme-mode-toggle {
-  display: inline-flex;
-  align-items: center;
-  background: var(--canvas-soft);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-pill);
-  padding: 3px;
-  margin: 0 4px;
-  height: 32px;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.theme-mode-toggle button {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: transparent;
-  border: 0;
-  color: var(--muted);
-  padding: 0 12px;
-  height: 24px;
-  border-radius: var(--r-pill);
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-}
-
-.theme-mode-toggle button:hover {
-  color: var(--ink);
-}
-
-.theme-mode-toggle button.active {
-  background: var(--ink);
-  color: var(--canvas);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
 /* Global overrides for React-mounted subsite */
 
 #root {
@@ -388,9 +351,7 @@
 }
 
 /* —— 主题切换：在 studio 主题下隐藏 classic 内容 —— */
-:root[data-tools-theme="studio"] .classic-only {
-  display: none;
-}
+
 :root[data-tools-theme="studio"] .studio-landing {
   display: block;
 }
@@ -445,3 +406,13 @@
     animation-duration: 0ms;
   }
 }
+
+/* Let the personal cover carry the atmosphere; keep navigation and content quiet. */
+:root[data-tools-theme="studio"] body { background-color: var(--canvas) !important; background-image: none !important; }
+:root[data-tools-theme="studio"] .top-bar { background: var(--canvas) !important; border-bottom: 1px solid var(--hairline); box-shadow: none; backdrop-filter: none; }
+:root[data-tools-theme="studio"] .breadcrumb, :root[data-tools-theme="studio"] .breadcrumb a { color: var(--ink) !important; font-weight: 550; }
+:root[data-tools-theme="studio"] .breadcrumb span { color: var(--muted) !important; }
+:root[data-tools-theme="studio"] .icon-button { color: var(--muted); border-color: var(--hairline); background: transparent; }
+:root[data-tools-theme="studio"] body::before, :root[data-tools-theme="studio"] body::after { display: none; }
+
+.landing-status { padding: 20px 24px 48px; text-align: center; color: var(--muted); font-size: 14px; }

@@ -1,3 +1,4 @@
+import { BackgroundCover } from '../BackgroundCover';
 import type { Tool } from '../../types';
 import { StudioHero } from './StudioHero';
 import { StudioCardGrid } from './StudioCardGrid';
@@ -13,7 +14,7 @@ interface Props {
 export function StudioLanding({ tools }: Props) {
   return (
     <div className="studio-landing">
-      <StudioHero />
+      <BackgroundCover variant="tools" label="03 / STUDIO — 手边有工具，眼前有风景。"><StudioHero /></BackgroundCover>
       <StudioCardGrid tools={tools} />
     </div>
   );

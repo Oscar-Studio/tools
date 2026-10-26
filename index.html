@@ -36,14 +36,9 @@
           document.documentElement.setAttribute('data-theme', resolved);
         } catch (e) { /* ignore */ }
       })();
-      // 渲染前应用 tools 主题（classic / studio），避免闪烁
-      (function() {
-        try {
-          var tt = localStorage.getItem('oscar-tools-theme');
-          if (tt !== 'classic' && tt !== 'studio') tt = 'studio';
-          document.documentElement.setAttribute('data-tools-theme', tt);
-        } catch (e) { /* ignore */ }
-      })();
+      // The landing page has one design; normalize retired cached preferences.
+      document.documentElement.setAttribute('data-tools-theme', 'studio');
+      try { localStorage.setItem('oscar-tools-theme', 'studio'); } catch (e) { /* storage may be unavailable */ }
     </script>
 
     <script defer src="https://analytics.oscarstudio.cn/script.js" data-website-id="4c9803e1-e3f9-47e3-8033-46224f88f28b"></script>

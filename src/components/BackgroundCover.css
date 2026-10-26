@@ -1,0 +1,51 @@
+/* Personal covers belong to the landing page, never to the tool canvas. */
+.os-cover { --oc-paper: var(--surface, #f8f7f2); --oc-ink: var(--ink, #252720); --oc-muted: var(--muted, #6c7069); --oc-line: var(--hairline, #d9ddd6); --oc-accent: var(--primary, #625cbe); position: relative; isolation: isolate; }
+.os-cover *, .os-cover *::before, .os-cover *::after { box-sizing: border-box; }
+.os-cover-photo { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: #253840; }
+.os-cover-photo img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); }
+.os-cover-shade { position: absolute; inset: 0; background: #000; }
+.os-cover-photo-caption { position: absolute; inset: auto 24px 22px; display: flex; justify-content: space-between; gap: 12px; color: #fff; font: 9px/1.5 ui-monospace, monospace; letter-spacing: 1.5px; text-shadow: 0 1px 8px #0009; }
+.os-cover-photo-caption > span:last-child { font-size: 20px; }
+.os-cover-toolbar { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-inline: clamp(20px, 4vw, 64px); padding-block: 18px; border-top: 1px solid var(--oc-line); color: var(--oc-muted); }
+.os-cover-toolbar > span { font: 9px/1.6 ui-monospace, monospace; letter-spacing: 1.4px; }
+.os-cover-trigger { display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px; min-height: 40px; border: 1px solid var(--oc-line); border-radius: 3px; color: var(--oc-ink); background: var(--oc-paper); font-family: inherit; font-size: 12px; line-height: 1.4; cursor: pointer; white-space: nowrap; }
+.os-cover button:focus-visible, .os-cover input:focus-visible { outline: 2px solid var(--oc-accent); outline-offset: 4px; }
+.os-cover-trigger:hover { border-color: var(--oc-accent); }
+.os-cover-dialog { position: fixed; inset: 0; margin: auto; width: min(500px, calc(100% - 32px)); max-height: calc(100dvh - 40px); padding: 0; border: 1px solid var(--oc-line); border-radius: 7px; background: var(--oc-paper); color: var(--oc-ink); box-shadow: 0 24px 90px #0005; }
+.os-cover-dialog::backdrop { background: #10151c80; backdrop-filter: blur(6px); }
+.os-cover-panel { padding: 30px; text-align: left; font: 13px/1.7 -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif; }
+.os-cover-panel header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.os-cover-panel .os-cover-kicker { margin: 0 0 10px; color: var(--oc-accent); font: 9px/1.5 ui-monospace, monospace; letter-spacing: 1.6px; }
+.os-cover-panel h2 { margin: 0; font-size: 24px; letter-spacing: -1px; color: var(--oc-ink); }
+.os-cover-close { min-width: 36px; min-height: 36px; border: 0; background: transparent; color: var(--oc-ink); cursor: pointer; font-size: 25px; }
+.os-cover-description { margin: 16px 0 22px; color: var(--oc-muted); font-size: 13px; }
+.os-cover-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.os-cover-options button { padding: 5px 5px 10px; border: 1px solid var(--oc-line); background: transparent; border-radius: 3px; font: inherit; font-size: 11px; color: var(--oc-ink); cursor: pointer; }
+.os-cover-options button[aria-pressed='true'] { outline: 2px solid var(--oc-accent); outline-offset: 2px; }
+.os-cover-swatch { display: flex; align-items: center; justify-content: center; height: 65px; margin-bottom: 8px; background: color-mix(in srgb, var(--oc-muted) 10%, transparent); }
+.os-cover-paper { font: 38px Arial, sans-serif; color: var(--oc-accent); }
+.os-cover-sample { background: url('https://api.oscarstudio.cn/default-bg.jpeg') center / cover; }
+.os-cover-upload { border: 1px dashed var(--oc-line); }
+.os-cover-hint { margin: 15px 0 0; font-size: 10px; color: var(--oc-muted); }
+.os-cover-slider { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 22px; font-size: 12px; }
+.os-cover-slider output { color: var(--oc-muted); font-family: ui-monospace, monospace; }
+.os-cover-slider input { width: 100%; accent-color: var(--oc-accent); }
+.os-cover-panel footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--oc-line); padding-top: 20px; margin-top: 25px; }
+.os-cover-panel footer > span { color: var(--oc-muted); font-size: 10px; }
+.os-cover-panel footer button { border: 0; background: var(--oc-ink); color: var(--oc-paper); border-radius: 3px; min-height: 42px; padding: 9px 16px; font: inherit; cursor: pointer; }
+.os-cover-error { color: #c54d35; font-size: 12px; }
+@media (max-width: 600px) { .os-cover-panel { padding: 23px; } .os-cover-panel h2 { font-size: 21px; } .os-cover-toolbar > span { max-width: 180px; font-size: 8px; } }
+
+/* A focused desktop: generous type, an inset landscape, a small window chrome. */
+.os-cover-tools.os-cover-active { margin: 32px clamp(20px, 4vw, 64px) 0; border: 1px solid var(--oc-line); border-radius: 8px; background: var(--oc-paper); }
+.os-cover-tools.os-cover-active .os-cover-photo { inset: 28px 28px 82px auto; width: 43%; z-index: 0; border-radius: 5px; border: 1px solid var(--oc-line); border-top: 30px solid var(--surface-card, #e5e6e9); }
+.os-cover-tools.os-cover-active::after { content: '● ● ●    / A LITTLE BREATHING ROOM'; position: absolute; right: 28px; top: 28px; width: 43%; padding: 9px 14px; color: var(--oc-muted); font: 8px/12px ui-monospace, monospace; letter-spacing: 1px; pointer-events: none; }
+.os-cover-tools.os-cover-active .os-cover-photo-caption { inset: auto 20px 18px; font-size: 8px; }
+:root[data-tools-theme="studio"] .os-cover-active .studio-hero { padding: 65px 36px 42px; min-height: 380px; width: 54%; border: 0; }
+:root[data-tools-theme="studio"] .os-cover-active .studio-intro { display: block; }
+:root[data-tools-theme="studio"] .os-cover-active .studio-intro__left h1 { font-size: clamp(45px, 5.1vw, 72px); line-height: 1.05; }
+:root[data-tools-theme="studio"] .os-cover-active .studio-intro__left h1 em { display: block; }
+:root[data-tools-theme="studio"] .os-cover-active .studio-intro__lede { font-size: 14px; max-width: 32ch; line-height: 1.85; margin-top: 24px; }
+:root[data-tools-theme="studio"] .os-cover-active .studio-intro__right { display: none; }
+.os-cover-tools.os-cover-active .os-cover-toolbar { margin-inline: 36px; }
+@media (max-width: 720px) { .os-cover-tools.os-cover-active { display: grid; } :root[data-tools-theme="studio"] .os-cover-active .studio-hero { width: 100%; min-height: 0; padding: 40px 26px 30px; } :root[data-tools-theme="studio"] .os-cover-active .studio-intro__left h1 em { display: inline; } .os-cover-tools.os-cover-active .os-cover-content { grid-row: 1; } .os-cover-tools.os-cover-active .os-cover-photo { grid-row: 2; position: relative; inset: auto; width: calc(100% - 48px); height: 220px; margin: 0 24px 24px; } .os-cover-tools.os-cover-active::after { display: none; } .os-cover-tools.os-cover-active .os-cover-toolbar { grid-row: 3; margin-inline: 26px; } }

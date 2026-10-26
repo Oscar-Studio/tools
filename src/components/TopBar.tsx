@@ -1,14 +1,13 @@
 import { forwardRef, useEffect, useState } from 'react';
 import { ThemeToggle } from './ThemeToggle';
-import { useHomeTheme } from '../hooks/useHomeTheme';
 
 interface TopBarProps {
   section: string;
+  onSearch: (value: string) => void;
 }
 
-export const TopBar = forwardRef<HTMLInputElement, TopBarProps>(function TopBar({ section }, searchInputRef) {
+export const TopBar = forwardRef<HTMLInputElement, TopBarProps>(function TopBar({ section, onSearch }, searchInputRef) {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [toolsTheme, setToolsTheme] = useHomeTheme();
 
   // 加载 user-button.js（共享认证）
   useEffect(() => {
@@ -59,6 +58,8 @@ export const TopBar = forwardRef<HTMLInputElement, TopBarProps>(function TopBar(
           ref={searchInputRef}
           type="text"
           id="searchInput"
+          aria-label="搜索名称、介绍或标签"
+          onChange={event => onSearch(event.target.value)}
           placeholder="搜索工具…"
           autoComplete="off"
           onBlur={() => setSearchOpen(false)}
@@ -66,24 +67,6 @@ export const TopBar = forwardRef<HTMLInputElement, TopBarProps>(function TopBar(
       </div>
 
       <div className="top-bar-actions">
-        <div className="theme-mode-toggle" role="group" aria-label="主题">
-          <button
-            type="button"
-            className={toolsTheme === 'classic' ? 'active' : ''}
-            onClick={() => setToolsTheme('classic')}
-            aria-pressed={toolsTheme === 'classic'}
-          >
-            Classic
-          </button>
-          <button
-            type="button"
-            className={toolsTheme === 'studio' ? 'active' : ''}
-            onClick={() => setToolsTheme('studio')}
-            aria-pressed={toolsTheme === 'studio'}
-          >
-            Studio
-          </button>
-        </div>
         <button
           type="button"
           className="icon-button search-toggle"
