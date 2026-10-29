@@ -7,7 +7,7 @@
 // ⚠️ datetime.js 本次改过（新增 span 返回值），import 必须带 ?v=，理由见 render.js 顶部。
 // =====================================================
 
-import { parseDateExpression } from './datetime.js?v=2026-09-26c';
+import { parseDateExpression } from './datetime.js?v=2026-10-29a';
 
 const TAG_RE = /#([\p{L}\p{N}_\-]+)/gu;
 

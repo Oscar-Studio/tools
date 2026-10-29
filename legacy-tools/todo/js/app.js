@@ -9,20 +9,20 @@
 //        只加一部分会出现两份 render.js，drag.js 拿到的那份 ui 还是空的，
 //        initDrag() 抛错会中断 init()，主题/通知/同步全失效。
 //     2) 部署时把 index.html 与全部 import 的版本号一起改。
-//   当前版本：2026-09-26c
+//   当前版本：2026-10-29a
 // =====================================================
 
-import { subscribe, replaceState, getState, setTheme, updateTask } from './store.js?v=2026-09-26c';
-import { initRender, render } from './render.js?v=2026-09-26c';
-import { initDrag } from './drag.js?v=2026-09-26c';
-import { isLoggedIn, onLoginChange, loginRedirect } from './auth.js?v=2026-09-26c';
-import { pull, pushNow, onSyncStatus } from './sync.js?v=2026-09-26c';
-import { maybePromptImport } from './migrate.js?v=2026-09-26c';
+import { subscribe, replaceState, getState, setTheme, updateTask } from './store.js?v=2026-10-29a';
+import { initRender, render } from './render.js?v=2026-10-29a';
+import { initDrag } from './drag.js?v=2026-10-29a';
+import { isLoggedIn, onLoginChange, loginRedirect } from './auth.js?v=2026-10-29a';
+import { pull, pushNow, onSyncStatus } from './sync.js?v=2026-10-29a';
+import { maybePromptImport } from './migrate.js?v=2026-10-29a';
 import {
     initReminder, stopReminder,
     getNotificationPermission, requestNotificationPermission,
-} from './reminder.js?v=2026-09-26c';
-import { loadReminderPrefs, getReminderPrefs } from './settings.js?v=2026-09-26c';
+} from './reminder.js?v=2026-10-29a';
+import { loadReminderPrefs, getReminderPrefs, initReminderSettings } from './settings.js?v=2026-10-29a';
 
 // ============ 抓取 DOM ============
 
@@ -145,6 +145,7 @@ function updateBellIcon() {
 // ============ 初始化 ============
 
 function init() {
+    initReminderSettings();
     onSyncStatus(applySyncStatus);
     applySyncStatus({ status: isLoggedIn() ? 'cloud' : 'local', label: isLoggedIn() ? '已同步' : '本地' });
 

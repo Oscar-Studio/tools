@@ -9,18 +9,18 @@
 //   - 点击「取消 / ×」丢弃 draft，state 不变
 //
 // ⚠️ 缓存版本：本文件与其它模块之间的 import 必须统一带 ?v=（见 app.js 顶部铁律）。
-//   版本号：2026-09-26c
+//   版本号：2026-10-29a
 // =====================================================
 
 import {
     getState, addTask, updateTask, deleteTask, toggleTask,
     addGroup, renameGroup, deleteGroup,
     uid,
-} from './store.js?v=2026-09-26c';
-import { renderMarkdown } from './markdown.js?v=2026-09-26c';
-import { showConfirm, showPrompt } from './modal.js?v=2026-09-26c';
-import { analyzeQuickAdd } from './quickadd.js?v=2026-09-26c';
-import { createDatePicker, createTimePicker, closePopover } from './picker.js?v=2026-09-26c';
+} from './store.js?v=2026-10-29a';
+import { renderMarkdown } from './markdown.js?v=2026-10-29a';
+import { showConfirm, showPrompt } from './modal.js?v=2026-10-29a';
+import { analyzeQuickAdd } from './quickadd.js?v=2026-10-29a';
+import { createDatePicker, createTimePicker, closePopover } from './picker.js?v=2026-10-29a';
 
 
 const GROUP_COLORS = ['#5b8def', '#22c55e', '#f59e0b', '#e74c3c', '#a855f7', '#06b6d4', '#ec4899', '#84cc16'];

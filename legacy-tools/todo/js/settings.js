@@ -92,3 +92,53 @@ export async function loadReminderPrefs() {
         return local;
     }
 }
+
+// 登录用户通过后端保存；访客仅保存到本机。
+export async function saveReminderPrefs(next) {
+    if (!TIME_RE.test(next.defaultTime) || !Number.isInteger(next.defaultReminder) || next.defaultReminder < 0 || next.defaultReminder > 1440) {
+        throw new Error('请输入有效时间及 0–1440 的整数分钟');
+    }
+    const token = readAuthToken();
+    if (token) {
+        const resp = await fetch(`${resolveApiBase()}/api/ui`, {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ todoDefaultTime: next.defaultTime, todoDefaultReminder: next.defaultReminder }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.message || '保存失败，请重试');
+        next = { defaultTime: data.ui.todoDefaultTime, defaultReminder: data.ui.todoDefaultReminder };
+    }
+    writeCache(next);
+    return token ? '已保存到云端' : '已保存到本机，登录后可保存到云端';
+}
+
+export function initReminderSettings() {
+    const dialog = document.getElementById('reminderSettingsDialog');
+    const time = document.getElementById('reminderDefaultTime');
+    const offset = document.getElementById('reminderDefaultOffset');
+    const status = document.getElementById('reminderSettingsStatus');
+    const save = document.getElementById('reminderSettingsSave');
+    document.getElementById('reminderSettingsBtn').addEventListener('click', async () => {
+        save.disabled = true;
+        status.textContent = '加载中…';
+        dialog.showModal();
+        const prefs = await loadReminderPrefs();
+        time.value = prefs.defaultTime;
+        offset.value = prefs.defaultReminder;
+        status.textContent = '';
+        save.disabled = false;
+    });
+    document.getElementById('reminderSettingsClose').addEventListener('click', () => dialog.close());
+    document.getElementById('reminderSettingsForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        save.disabled = true;
+        try {
+            status.textContent = await saveReminderPrefs({ defaultTime: time.value, defaultReminder: Number(offset.value) });
+        } catch (error) {
+            status.textContent = error.message;
+        } finally {
+            save.disabled = false;
+        }
+    });
+}

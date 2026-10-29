@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>待办清单 在线工具 | Oscar Studio 实用工具</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="./styles.css?v=2026-09-26c">
+    <link rel="stylesheet" href="./styles.css?v=2026-10-29a">
 </head>
 <body data-theme="light">
     <!-- 顶部条 -->
@@ -33,6 +33,7 @@
             </div>
         </div>
         <div class="topbar-right">
+            <button id="reminderSettingsBtn" class="ghost-btn" type="button">提醒设置</button>
             <button id="themeBtn" class="icon-btn" title="切换主题" aria-label="切换主题">🌗</button>
             <button id="bellBtn" class="icon-btn bell-btn" title="开启浏览器通知" aria-label="通知权限">🔕</button>
             <div id="syncStatus" class="sync-pill sync-pill--local" title="本地存储">
@@ -82,6 +83,20 @@
         </aside>
     </main>
 
+    <dialog id="reminderSettingsDialog" class="dialog">
+        <form id="reminderSettingsForm">
+            <h3 class="dialog-title">待办提醒默认值</h3>
+            <p class="dialog-desc">未指定时间的任务使用默认时间；未单独设置提前量的任务使用默认提前量。浏览器通知需要保持页面打开。</p>
+            <p><label>默认时间 <input id="reminderDefaultTime" type="time" required value="09:00"></label></p>
+            <p><label>默认提前量（分钟） <input id="reminderDefaultOffset" type="number" min="0" max="1440" step="1" required value="30"></label></p>
+            <p id="reminderSettingsStatus" role="status"></p>
+            <div class="dialog-actions">
+                <button id="reminderSettingsClose" class="ghost-btn" type="button">关闭</button>
+                <button id="reminderSettingsSave" class="primary-btn" type="submit">保存</button>
+            </div>
+        </form>
+    </dialog>
+
     <!-- 导入对话框（本地→云端） -->
     <div id="importDialog" class="dialog-backdrop" hidden>
         <div class="dialog" role="dialog" aria-labelledby="importTitle">
@@ -101,6 +116,6 @@
     <!-- 轻提示 -->
     <div id="toast" class="toast" hidden></div>
 
-    <script type="module" src="./js/app.js?v=2026-09-26c"></script>
+    <script type="module" src="./js/app.js?v=2026-10-29a"></script>
 </body>
 </html>
