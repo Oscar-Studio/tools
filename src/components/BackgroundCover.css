@@ -52,9 +52,10 @@
 
 /* Keep the default canvas framed, just like the photo cover. */
 :root[data-tools-theme="studio"] .os-cover-tools:not(.os-cover-active) { margin: 32px clamp(20px, 4vw, 64px) 0; border: 1px solid var(--oc-line); border-radius: 8px; background: var(--oc-paper); }
-:root[data-tools-theme="studio"] .os-cover-tools:not(.os-cover-active) .studio-hero { padding-inline: 36px; border-bottom: 0; }
+:root[data-tools-theme="studio"] .os-cover-tools:not(.os-cover-active) .studio-hero { min-height: 420px; display: flex; align-items: center; padding: 64px 36px; border-bottom: 0; }
+:root[data-tools-theme="studio"] .os-cover-tools:not(.os-cover-active) .studio-hero__inner { width: 100%; }
 .os-cover-tools:not(.os-cover-active) .os-cover-toolbar { margin-inline: 36px; }
 @media (max-width: 720px) {
-  :root[data-tools-theme="studio"] .os-cover-tools:not(.os-cover-active) .studio-hero { padding-inline: 24px; }
+  :root[data-tools-theme="studio"] .os-cover-tools:not(.os-cover-active) .studio-hero { min-height: 0; padding: 48px 24px; }
   .os-cover-tools:not(.os-cover-active) .os-cover-toolbar { margin-inline: 24px; }
 }
