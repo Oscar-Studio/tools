@@ -49,3 +49,12 @@
 :root[data-tools-theme="studio"] .os-cover-active .studio-intro__right { display: none; }
 .os-cover-tools.os-cover-active .os-cover-toolbar { margin-inline: 36px; }
 @media (max-width: 720px) { .os-cover-tools.os-cover-active { display: grid; } :root[data-tools-theme="studio"] .os-cover-active .studio-hero { width: 100%; min-height: 0; padding: 40px 26px 30px; } :root[data-tools-theme="studio"] .os-cover-active .studio-intro__left h1 em { display: inline; } .os-cover-tools.os-cover-active .os-cover-content { grid-row: 1; } .os-cover-tools.os-cover-active .os-cover-photo { grid-row: 2; position: relative; inset: auto; width: calc(100% - 48px); height: 220px; margin: 0 24px 24px; } .os-cover-tools.os-cover-active::after { display: none; } .os-cover-tools.os-cover-active .os-cover-toolbar { grid-row: 3; margin-inline: 26px; } }
+
+/* Keep the default canvas framed, just like the photo cover. */
+:root[data-tools-theme="studio"] .os-cover-tools:not(.os-cover-active) { margin: 32px clamp(20px, 4vw, 64px) 0; border: 1px solid var(--oc-line); border-radius: 8px; background: var(--oc-paper); }
+:root[data-tools-theme="studio"] .os-cover-tools:not(.os-cover-active) .studio-hero { padding-inline: 36px; border-bottom: 0; }
+.os-cover-tools:not(.os-cover-active) .os-cover-toolbar { margin-inline: 36px; }
+@media (max-width: 720px) {
+  :root[data-tools-theme="studio"] .os-cover-tools:not(.os-cover-active) .studio-hero { padding-inline: 24px; }
+  .os-cover-tools:not(.os-cover-active) .os-cover-toolbar { margin-inline: 24px; }
+}
