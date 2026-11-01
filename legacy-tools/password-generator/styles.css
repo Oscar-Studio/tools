@@ -62,7 +62,6 @@ body[data-theme="dark"] .ambient-two { background:#5a3a30;opacity:.45 }
 .copy-btn { border:1px solid var(--line);background:var(--card-soft);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:11px;transition:all .2s;font-family:inherit }
 .copy-btn:hover { color:var(--accent);border-color:var(--accent) }
 .copy-btn.is-ok { color:var(--green);border-color:var(--green) }
-.copy-btn.is-counting { color:var(--warn);border-color:var(--warn) }
 
 .text-input { display:block;width:100%;border:1px solid var(--line);background:var(--card-soft);color:var(--text);padding:11px 14px;border-radius:10px;outline:0;font-size:13px }
 .text-input:focus { border-color:var(--accent) }

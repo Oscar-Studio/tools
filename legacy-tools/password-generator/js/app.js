@@ -28,7 +28,7 @@ function showToast(msg) {
   showToast.timer = setTimeout(() => t.classList.remove('is-visible'), 1600);
 }
 
-async function copyToClipboard(text, btn, opts = {}) {
+async function copyToClipboard(text, btn) {
   let ok = false;
   try {
     await navigator.clipboard.writeText(text);
@@ -44,13 +44,9 @@ async function copyToClipboard(text, btn, opts = {}) {
   }
   if (!ok) { showToast('复制失败'); return false; }
   if (btn) {
-    if (opts.countdown) {
-      startClipboardCountdown(btn);
-    } else {
-      flashCopyBtn(btn, '已复制');
-    }
+    flashCopyBtn(btn, '已复制');
   } else {
-    showToast(opts.countdown ? '已复制（30s 后自动清除）' : '已复制');
+    showToast('已复制');
   }
   return true;
 }
@@ -68,49 +64,9 @@ function flashCopyBtn(btn, text) {
   }, 1500);
 }
 
-// ---------- Clipboard countdown ----------
-const COUNTDOWN_SECONDS = 30;
-let countdownTimer = null;
-let countdownEnd = 0;
-let countdownBtn = null;
-
-function clearClipboardCountdown() {
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
-    countdownTimer = null;
-  }
-  if (countdownBtn) {
-    const orig = countdownBtn.dataset.origText || '复制';
-    countdownBtn.textContent = orig;
-    countdownBtn.classList.remove('is-counting', 'is-ok');
-  }
-  countdownBtn = null;
-}
-
-function startClipboardCountdown(btn) {
-  // 同一按钮:重置；不同按钮:接管旧的
-  if (countdownBtn && countdownBtn !== btn) clearClipboardCountdown();
-  countdownBtn = btn;
-  if (!btn.dataset.origText) btn.dataset.origText = btn.textContent;
-  countdownEnd = Date.now() + COUNTDOWN_SECONDS * 1000;
-  btn.classList.add('is-counting');
-  countdownTimer = setInterval(() => {
-    const remain = Math.max(0, Math.ceil((countdownEnd - Date.now()) / 1000));
-    if (remain <= 0) {
-      // 自动清空剪贴板(覆盖空字符串)
-      try { navigator.clipboard.writeText(''); } catch {}
-      clearClipboardCountdown();
-      showToast('已自动清空剪贴板');
-    } else if (countdownBtn === btn) {
-      btn.textContent = `已复制 (${remain}s)`;
-    }
-  }, 250);
-}
-
-// 暴露给 UI 按钮用
+// ---------- 手动清除剪贴板 ----------
 async function copyNowClear() {
   try { await navigator.clipboard.writeText(''); } catch {}
-  clearClipboardCountdown();
   showToast('已清除剪贴板');
 }
 
@@ -272,7 +228,7 @@ function bindStrongTab() {
   $('#strongRegenBtn').addEventListener('click', renderStrong);
   $('#strongCopyBtn').addEventListener('click', async () => {
     if (!lastStrong.password) { showToast('请先生成密码'); return; }
-    await copyToClipboard(lastStrong.password, $('#strongCopyBtn'), { countdown: true });
+    await copyToClipboard(lastStrong.password, $('#strongCopyBtn'));
   });
   $('#strongSaveBtn').addEventListener('click', () => {
     if (!lastStrong.password) { showToast('请先生成密码'); return; }
@@ -334,7 +290,7 @@ function bindPassphraseTab() {
   $('#passRegenBtn').addEventListener('click', renderPassphrase);
   $('#passCopyBtn').addEventListener('click', async () => {
     if (!lastPassphrase.passphrase) { showToast('请先生成助记密码'); return; }
-    await copyToClipboard(lastPassphrase.passphrase, $('#passCopyBtn'), { countdown: true });
+    await copyToClipboard(lastPassphrase.passphrase, $('#passCopyBtn'));
   });
   $('#passSaveBtn').addEventListener('click', () => {
     if (!lastPassphrase.passphrase) { showToast('请先生成助记密码'); return; }
