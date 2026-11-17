@@ -190,8 +190,7 @@
         color: var(--secondary-color) !important;
     }
 
-    #userButtonContainer .user-avatar-btn,
-    #userButtonContainer button {
+    #userButtonContainer .user-avatar-btn {
         background: rgba(255, 255, 255, 0.04) !important;
         border: 1px solid rgba(255, 255, 255, 0.12) !important;
         backdrop-filter: none !important;
@@ -998,8 +997,7 @@ background: #f5f5f7 !important;
 border-color: #2A5CAA !important;
 color: #2A5CAA !important;
 }
-[data-theme="light"] #userButtonContainer .user-avatar-btn,
-[data-theme="light"] #userButtonContainer button {
+[data-theme="light"] #userButtonContainer .user-avatar-btn {
 background: #ffffff !important;
 border-color: rgba(0, 0, 0, 0.12) !important;
 }
